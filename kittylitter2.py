@@ -91,7 +91,7 @@ async def help(ctx, *option):
     pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 2.0\nhttps://github.com/majordoobie/waritsukeruBot")
+        "\n\nKittyLitter Version 2.0\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
@@ -118,45 +118,50 @@ async def help(ctx, *option):
         
         await ctx.send(embed=embed)
         return
-    desc = ("KittyLitter is used to archive and purge channels after war/cwl. It must first be set up (once) by running /setup. "
-    "Setup will promt you for two options.\n\n"
-    "(Option 1: Categories)\n"
-    "Identify the categories that will be the war channels. The category will be used to streamline "
-    "archiving and purging the channels that fall underneath it. Each category should list the channels that correspond to "
-    "the CoC war enemy position in order from least to greatest. For example:\n\n"
-    "---> NORMAL_WAR\n"
-    "-----> warroom_1\n"
-    "-----> warroom_2\n\n"
-    "Once you have identified NORMAL_WAR as a war category, you will be promt to map that category to a channel under "
-    "'ARCHIVES'. If the category or a channel under this category does not exist, please create it. Once that category "
-    "has been mapped to a unique archive channel, the archive command will automatically use that channel as the destination "
-    "for all the channels in the category.\n\n"
-    "(Option 2: Exclusions)\n"
-    "Option 2 is used to set up channels you want the script to ignore. Some channels to consider would be channels used "
-    "to post rules or discussion channels you would like to exempt from being purged.\n\n"
-    "NOTE!!: that it is recommended to use option 1 first to avoid listing too many channels.")
+    elif option[0] == "--verbose":
+        desc1 = ("Thank you for using KittyLitter. KittyLitter conducts 3 main functions: "
+            "archive/purge channels, sync roles and nicknames between Reddit Zulu and Zulu Base "
+            "Planning (ZBP) and finally ping Reddit Zulu when a user in ZBP is requesting help in ZBP. "
+            "Archiving and Purging channels were the original and sole functions of KittyLitter. The "
+            "idea was to always have a clean channel every time a new war started. The problem with "
+            "just purging a channel is that often times those old plans on previous wars would provide "
+            "insight to our new enemies. Therefore, KittyLitter began to archive each war with the plans "
+            "our members came up with and allowed our members to look through the archives to find old plans. ")
+        desc2 = ("Syncing roles and nicknames is a new function that was introduced in version 2 of KittyLitter. "
+            "Before KittyLitter, an admin would have to go through each user in ZBP to make sure they had "
+            "up-to-date roles. This made it unreliable to ping th# or CWL since admins are constantly "
+            "busy working on higher priority tasks. KittyLitter now performs these functions on the admin's "
+            "behalf. Another addition to syncing roles is the ability for anyone to request the @Helper role. "
+            "The @Helper role is used to ping volunteers in Reddit Zulu who are traditionally strong attackers "
+            "with up to date knowledge of current metas for help.\n")
 
-    setup_desc = ("Prompts user to setup the configuration file. Be sure to use option zero first.")
-
-    readconfig_desc = ("Prints out the configuration file for verification of proper setup.")
-
-    archive_desc = ("Uses the config file to archive all channels identified to be archived in the config file.")
-
-    archive_descc = ("Only archives the category supplied by the user to the archive channel mapped in the config file.")
-
-    purge_desc = ("Purges all channels identified in the config file as safe to purge.")
-
-    prige_descc = ("Only purges the category or channel supplied by the user. Channels whitelisted will be ignored. ")
-
-    embed = Embed(title='Meowwww!', description= desc, color=0x8A2BE2)
-    embed.add_field(name="Commands:", value="-----------", inline=True)
-    embed.add_field(name="/setup", value=setup_desc, inline=False)
-    embed.add_field(name="/readconfig", value=readconfig_desc, inline=False)
-    embed.add_field(name="/archive", value=archive_desc, inline=False)
-    embed.add_field(name="/archive <category>", value=archive_descc, inline=False)
-    embed.add_field(name="/purge", value=purge_desc, inline=False)
-    embed.add_field(name="/purge <category> or <channel>", value=prige_descc, inline=False)
-    await ctx.send(embed=embed)
+        desc3 = ("Finally, KittyLitter will monitor all war chats for the @Helper, @Zulu CWL, and @Elephino CWL mentions. "
+            "This will then ping #war-current-war, #zulu-war-room, and #elephino-war-room respectively with a little "
+            "reminder that there is a member requesting help in ZBP. The reminder contains the user name requesting "
+            "along with the channel they are requesting form.\n\n"
+            "[HISTORY]\n**[Version 2.0]**\n"
+            "[update]  Changed purge/archive behavior. Instead of purging/archiving, all the bot will only act on channels that have any new messages.\n"
+            "[update] Add/Remove Helper role\n"
+            "[update] Global Reddit Zulu Role and Nickname sync\n"
+            "[update] On server join: welcome new users and sync their profile with Reddit Zulu\n"
+            "[update] Identity users missing in Zulu Base Planning\n"
+            "[update] Ping Reddit Zulu server when user mentions @helper in Zulu Base Planning\n"
+            "[bug-fix] Replaced searching functions with generators to speed up functions")
+            
+        await ctx.send(embed=Embed(title='Meowwww!', description=desc1 ,color=0x8A2BE2))
+        await ctx.send(embed=Embed(description=desc2 ,color=0x8A2BE2))
+        embed = Embed( description=desc3 ,color=0x8A2BE2)
+        embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
+        embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
+        embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
+        embed.add_field(name=f"{pref}sync", value=sync, inline=False)
+        embed.add_field(name=f"{pref}readconfig", value=readconfig, inline=False)
+        embed.add_field(name=f"{pref}archive <#Category>", value=archive, inline=False)
+        embed.add_field(name=f"{pref}purge <#Category>", value=purge, inline=False)
+        embed.add_field(name=f"{pref}killswitch", value=kill, inline=False)
+        
+        await ctx.send(embed=embed)
+        return
 
 #####################################################################################################################
                                              # Commands
@@ -678,6 +683,7 @@ async def purge(ctx, *category):
     if exists == False:
         ctx.send(f"Could not find {category}")
         return
+
     desc = (f"I will now begin to purge {category[0]}. Please be sure to have had "
         "archived the files before continuing. This can not be undone! Would you like "
         "to proceed?\n\n\nPlease Type: KittyLitterBot")
@@ -689,17 +695,32 @@ async def purge(ctx, *category):
     else:
         pass
 
-    desc = ("Please use this channel to paste a screenshot of your enemy base. "
-        "It will be helpful to annotate the screenshot with arrows and explain your "
-        "thought process of how you're going to wreck your enemy. After you have done so, "
-        "feel free to ping the following roles for help!")
-    desc_Helper = ("Use the @Helpers first to see if there is anyone assigned for assisting on.")
-    desc_TH =("Alternatively you can use the @TH# tag to get advice from folks in your TH level.")
-    desc_leader=("Lastly, if those two fail you can always tag our leaders with @CoC Leadership")
+    cwl = False
+    if category[1] == 530386718084562955: #elephino
+        cwl = True
+        ping = "@Elephino CWL"
+        ping_desc = ("Use @Elephino CWL to ping members who are also participating in your CWL team.")
+    elif category[1] == 511742081056899084: #zulu cwl
+        cwl = True
+        ping = "@Zulu CWL"
+        ping_desc = ("Use @Zulu CWL to ping members who are also participating in your CWL team.") 
+
+    desc = ("Please use this channel to plan your attacks. To do so, paste a screenshot of the enemy base "
+        "that you are considering attacking. Then comment on how you plan to attack the enemy base. For best "
+        "results, use an image annotation app to include arrows and shapes in your screenshot.")
+    
+    desc_Helper = ("Use @Helpers to ping users who have volunteered to help. These are often times "
+        "attack experts who are willing to help look over your plan. Want to become a helper?! See "
+        "#instruction-board! to findout how!")
+
+    desc_TH =("Alternatively you can use the @TH# mention to get advice from folks in your own townhall level.")
+    desc_leader=("Lastly, if those two fail you can always mention our leaders with @CoC Leadership")
     newchannel = Embed(title='WELCOME!', description= desc, color=0x8A2BE2)
-    newchannel.add_field(name="@Helpers", value=desc_Helper, inline=True)
-    newchannel.add_field(name="@TH#s", value=desc_TH, inline=True)
-    newchannel.add_field(name="@CoC Leadership", value=desc_leader, inline=True)
+    newchannel.add_field(name="@Helpers", value=desc_Helper, inline=False)
+    if cwl:
+        newchannel.add_field(name=ping, value=ping_desc, inline=False)
+    newchannel.add_field(name="@TH#s", value=desc_TH, inline=False)
+    newchannel.add_field(name="@CoC Leadership", value=desc_leader, inline=False)
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
     await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
@@ -707,8 +728,8 @@ async def purge(ctx, *category):
     await ctx.send(f"Purging {category[0]}")
     async with ctx.typing():
         for channel in catObj.channels:
-            if len(await channel.history(limit=1).flatten()) == 1:
-                continue
+            # if len(await channel.history(limit=3).flatten()) == 1:
+            #     continue
             while len(await channel.history(limit=1).flatten()) != 0:
                 deleted = await channel.purge(bulk=True)
                 await ctx.send(f"Deleted {len(deleted)} message(s) from {channel.name}")
