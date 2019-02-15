@@ -142,6 +142,8 @@ async def help(ctx, *option):
             "reminder that there is a member requesting help in ZBP. The reminder contains the user name requesting "
             "along with the channel they are requesting form.\n\n"
             "[HISTORY]\n"
+            "**[Version 2.1]**\n"
+            "[update] muster function to see members in this server who no longer have CoC Members Role\n"
             "**[Version 2.0]**\n"
             "[update]  Changed purge/archive behavior. Instead of purging/archiving, all the bot will only act on channels that have any new messages.\n"
             "[update] Add/Remove Helper role\n"
