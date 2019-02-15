@@ -7,14 +7,13 @@ import discord
 from APIs.discordBotAPI import BotAssist
 
 # Built ins
-import datetime
-from configparser import ConfigParser
-from sys import exit as ex
-from os import path
-from sys import argv
-import datetime
 import aiohttp
+from configparser import ConfigParser
+import datetime
 import io
+from sys import exit as ex
+from sys import argv
+from os import path
 
 # Delete after production
 import time
@@ -91,7 +90,7 @@ async def help(ctx, *option):
     pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 2.0\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nKittyLitter Version 2.1\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
@@ -104,12 +103,15 @@ async def help(ctx, *option):
         "send archives to. Roles is specifying which Reddit Zulu roles you would "
         f"like the bot to sync with this server.\n**[Examples]**\n{pref}setup --mapping\n{pref}setup --roles")
     sync = (f"Sync Reddit Zulu server data with this server - limited to the Roles configuration")
+    muster = (f"Display the current roster in three categories. Those with CoC Members Role, those who are bots and those who do not have "
+        "the CoC Members role")
     help = (f"Show this help menu.\n**[Examples]**\n{pref}help --verbose")
     if len(option) == 0:
         embed = Embed(title='Meowwww!', description="Quick view of commands:" ,color=0x8A2BE2)
         embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
         embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
         embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
+        embed.add_field(name=f"{pref}muster", value=muster, inline=False)
         embed.add_field(name=f"{pref}sync", value=sync, inline=False)
         embed.add_field(name=f"{pref}readconfig", value=readconfig, inline=False)
         embed.add_field(name=f"{pref}archive <#Category>", value=archive, inline=False)
@@ -139,7 +141,8 @@ async def help(ctx, *option):
             "This will then ping #war-current-war, #zulu-war-room, and #elephino-war-room respectively with a little "
             "reminder that there is a member requesting help in ZBP. The reminder contains the user name requesting "
             "along with the channel they are requesting form.\n\n"
-            "[HISTORY]\n**[Version 2.0]**\n"
+            "[HISTORY]\n"
+            "**[Version 2.0]**\n"
             "[update]  Changed purge/archive behavior. Instead of purging/archiving, all the bot will only act on channels that have any new messages.\n"
             "[update] Add/Remove Helper role\n"
             "[update] Global Reddit Zulu Role and Nickname sync\n"
@@ -150,7 +153,8 @@ async def help(ctx, *option):
             
         await ctx.send(embed=Embed(title='Meowwww!', description=desc1 ,color=0x8A2BE2))
         await ctx.send(embed=Embed(description=desc2 ,color=0x8A2BE2))
-        embed = Embed( description=desc3 ,color=0x8A2BE2)
+        await ctx.send(embed = Embed( description=desc3 ,color=0x8A2BE2))
+        embed = Embed(Title="Verbose output" ,color=0x8A2BE2)
         embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
         embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
         embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
@@ -237,6 +241,50 @@ async def kill(ctx):
     else:
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
+
+@discord_client.command()
+async def muster(ctx):
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        desc = f"You are attempting to run a command destined for another server."
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
+        return
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    zuluGuild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+    present = [ mem.id for mem in zuluGuild.members if 'CoC Members' in (rol.name for rol in mem.roles) ]
+
+    members = []
+    nonmembers = []
+    bots = []
+    for member in ctx.guild.members:
+        if member.id in present:
+            members.append(member.display_name)
+        elif 'bots bots bots' in (role.name for role in member.roles):
+            bots.append(member.display_name)
+        else:
+            nonmembers.append(member.display_name)
+
+    output = "# Members with CoC Member Role\n\n"
+    for member in members:
+        output += (f"{member}\n")
+
+    output += (f"\n\n# Bots\n\n")
+    for member in bots:
+        output += (f"{member}\n")
+
+    output += (f"\n\n# Members without CoC Member Role\n\n")
+    for member in nonmembers:
+        output += (f"{member}\n")
+
+    await ctx.send(f"Muster:\n```{output}```")
+    
 
 @discord_client.command()
 async def helper(ctx, action, *mention):
