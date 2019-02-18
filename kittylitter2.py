@@ -90,7 +90,7 @@ async def help(ctx, *option):
     pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 2.1\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nKittyLitter Version 2.2\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
@@ -98,11 +98,14 @@ async def help(ctx, *option):
         "new messages are found - delete all contents and apply new welcome message")
     helper = (f"Add or remove @Helper role to yourself or another user.\n**[Examples]**\n "
         f"{pref}helper --add\n{pref}helper --add <@mention>\n{pref}helper --remove\n{pref}helper --remove <@mention>\n{pref}helper --list")
+
     readconfig = (f"Read current configuration file.")
+
     setup = (f"Set up mapping or roles. Mappings is the channel you would like the bot to "
         "send archives to. Roles is specifying which Reddit Zulu roles you would "
         f"like the bot to sync with this server.\n**[Examples]**\n{pref}setup --mapping\n{pref}setup --roles")
     sync = (f"Sync Reddit Zulu server data with this server - limited to the Roles configuration")
+    
     muster = (f"Display the current roster in three categories. Those with CoC Members Role, those who are bots and those who do not have "
         "the CoC Members role")
     help = (f"Show this help menu.\n**[Examples]**\n{pref}help --verbose")
@@ -176,12 +179,12 @@ async def help(ctx, *option):
 async def on_member_join(pmember):
     if int(pmember.guild.id) == int(config['Discord']['plandisc_id']):
         channel = pmember.guild.get_channel(int(config['Discord']['welcome']))
-        msg = (f"Welcome to Zulu Base Planning server {pmember.mention}! "
-        f"I will beging to sync your profile with Reddit Zulu, meantime please make your "
+        msg = (f"Welcome to Zulu Base Planning server, {pmember.mention}! "
+        f"I will begin to sync your profile with Reddit Zulu, meantime please make your "
         "way to the ` #instruction-board ` to get a feel for how this server works.")
         await channel.send(msg)
 
-        await channel.send("Syncing user .. ")
+        await channel.send("Syncing user... ")
         zbpRoles = [ (k,v) for k,v in config['roles'].items() ]
         zuluGuild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
         zmember = zuluGuild.get_member(pmember.id)
@@ -778,8 +781,8 @@ async def purge(ctx, *category):
     await ctx.send(f"Purging {category[0]}")
     async with ctx.typing():
         for channel in catObj.channels:
-            # if len(await channel.history(limit=3).flatten()) == 1:
-            #     continue
+            if len(await channel.history(limit=3).flatten()) == 1:
+                continue
             while len(await channel.history(limit=1).flatten()) != 0:
                 deleted = await channel.purge(bulk=True)
                 await ctx.send(f"Deleted {len(deleted)} message(s) from {channel.name}")
