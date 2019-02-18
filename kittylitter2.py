@@ -90,7 +90,7 @@ async def help(ctx, *option):
     pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 2.2\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nKittyLitter Version 2.3\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
@@ -288,7 +288,7 @@ async def muster(ctx):
     for member in nonmembers:
         output += (f"{member}\n")
 
-    await ctx.send(f"Muster:\n```{output}```")
+    await ctx.send(f"```\n{output}\n```")
     
 
 @discord_client.command()
