@@ -108,6 +108,7 @@ async def help(ctx, *option):
     
     muster = (f"Display the current roster in three categories. Those with CoC Members Role, those who are bots and those who do not have "
         "the CoC Members role")
+    autopur = (f"Combines the archive and purge commands into one.")
     help = (f"Show this help menu.\n**[Examples]**\n{pref}help --verbose")
     if len(option) == 0:
         embed = Embed(title='Meowwww!', description="Quick view of commands:" ,color=0x8A2BE2)
@@ -119,6 +120,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"{pref}readconfig", value=readconfig, inline=False)
         embed.add_field(name=f"{pref}archive <#Category>", value=archive, inline=False)
         embed.add_field(name=f"{pref}purge <#Category>", value=purge, inline=False)
+        embed.add_field(name=f"{autopur}autopurge <#Category>", value=autopur, inline=False)
         embed.add_field(name=f"{pref}killswitch", value=kill, inline=False)
         
         await ctx.send(embed=embed)
@@ -276,6 +278,8 @@ async def muster(ctx):
         else:
             nonmembers.append(member.display_name)
 
+    members.sort(key=lambda x: x.lower())
+    nonmembers.sort(key=lambda x: x.lower())
     output = "# Members with CoC Member Role\n\n"
     for member in members:
         output += (f"{member}\n")
@@ -284,7 +288,7 @@ async def muster(ctx):
     for member in bots:
         output += (f"{member}\n")
 
-    output += (f"\n\n# Members without CoC Member Role\n\n")
+    output += (f"\n\n# Members in this server without Members Role\n\n")
     for member in nonmembers:
         output += (f"{member}\n")
 
@@ -687,14 +691,19 @@ async def archive(ctx, *category):
                     continue
                 send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
                 files = []
-                if message.attachments:
-                    async with aiohttp.ClientSession() as session:
-                        for attachment_obj in message.attachments:
-                            async with session.get(attachment_obj.url) as resp:
-                                buffer = io.BytesIO(await resp.read())
-                                files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
-                files = files or None
-                await dest_channel.send(send_message, files=files)
+                try:
+                    if message.attachments:
+                        async with aiohttp.ClientSession() as session:
+                            for attachment_obj in message.attachments:
+                                async with session.get(attachment_obj.url) as resp:
+                                    buffer = io.BytesIO(await resp.read())
+                                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+                    files = files or None
+                    await dest_channel.send(send_message, files=files)
+                except Exception as e:
+                    msg = f"{e}\n{e.args}\nMessage ID: {message.id}"
+                    await dest_channel.send(msg)
+
     await ctx.send("All done!")
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
@@ -795,6 +804,140 @@ async def purge(ctx, *category):
 
 @purge.error
 async def purge_error(ctx, error):
+    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+
+@discord_client.command()
+async def autopurge(ctx, *category):
+    if category:
+        pass
+    else:
+        await ctx.send(embed = discord.Embed(title="ERROR", description="Category is a mandatory argument.", color=0xFF0000))
+        return
+    if botAPI.rightServer(ctx, config):
+        pass
+    else:
+        desc = f"You are attempting to run a command destined for another server."
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
+        return
+
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    category = ' '.join(category).upper()
+    for i in ctx.guild.categories:
+        if i.name.upper() != "ARCHIVES":
+            if category == i.name.upper():
+                category = ((i.name, i.id))
+    
+    if str(category[1]) in config['archive_mapping'].keys():
+        for cat, tar in config['archive_mapping'].items():
+            if str(category[1]) == cat:
+                source_category = discord_client.get_channel(int(cat))
+                dest_channel = discord_client.get_channel(int(tar))
+    else:
+        msg = (f"The category [{category[0]}] does not exist or it is not configured.")
+        await ctx.send(embed = discord.Embed(title="INPUT ERROR", description=msg, color=0xFF0000))
+        return
+
+    # Send warning
+    desc = (f"I will now begin to purge {category[0]}. Please be sure to have had "
+        "archived the files before continuing. This can not be undone! Would you like "
+        "to proceed?\n\n\nPlease Type: KittyLitterBot")
+    await ctx.send(embed = Embed(title='WARNING!', description= desc, color=0xFF0000)) 
+    msg = await discord_client.wait_for('message')
+    if msg.content != 'KittyLitterBot':
+        await ctx.send("You seem unsure. Going to abort.")
+        return
+    else:
+        pass
+
+
+    activity = discord.Activity(type = discord.ActivityType.watching, name="channels get archived")
+    await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
+
+    async with ctx.typing():
+        for channel in source_category.channels:
+            await ctx.send(f"Archiveing {channel.name}")
+            if len(await channel.history(limit=3).flatten()) < 2:
+                continue
+
+            #await dest_channel.send(f"Starting archive from {channel.name}")
+            msg = (f"Starting archive from {channel.name}")
+            await dest_channel.send(embed = discord.Embed(title=msg, color=0x00FFFF))
+            async for message in channel.history(limit=10000, reverse = True, after = datetime.datetime.utcnow() - datetime.timedelta(days=50)):
+                if int(message.author.id) in [513291454349836289, 515978655978094603]:
+                    continue
+                send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
+                files = []
+                try:
+                    if message.attachments:
+                        async with aiohttp.ClientSession() as session:
+                            for attachment_obj in message.attachments:
+                                async with session.get(attachment_obj.url) as resp:
+                                    buffer = io.BytesIO(await resp.read())
+                                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+                    files = files or None
+                    await dest_channel.send(send_message, files=files)
+                except Exception as e:
+                    msg = f"{e}\n{e.args}\eMessage ID: {message.id}"
+                    await dest_channel.send(msg)
+
+    await ctx.send("\n\nAll done!\nWill not start to purge the channels.")
+    game = Game(config[botMode]['game_msg'])
+    await discord_client.change_presence(status=discord.Status.online, activity=game)
+
+    cwl = False
+    if category[1] == 530386718084562955: #elephino
+        cwl = True
+        ping = "@Elephino CWL"
+        ping_desc = ("Use @Elephino CWL to ping members who are also participating in your CWL team.")
+    elif category[1] == 511742081056899084: #zulu cwl
+        cwl = True
+        ping = "@Zulu CWL"
+        ping_desc = ("Use @Zulu CWL to ping members who are also participating in your CWL team.") 
+
+    desc = ("Please use this channel to plan your attacks. To do so, paste a screenshot of the enemy base "
+        "that you are considering attacking. Then comment on how you plan to attack the enemy base. For best "
+        "results, use an image annotation app to include arrows and shapes in your screenshot.")
+    
+    desc_Helper = ("Use @Helpers to ping users who have volunteered to help. These are often times "
+        "attack experts who are willing to help look over your plan. Want to become a helper?! See "
+        "#instruction-board! to findout how!")
+
+    desc_TH =("Alternatively you can use the @TH# mention to get advice from folks in your own townhall level.")
+    desc_leader=("Lastly, if those two fail you can always mention our leaders with @CoC Leadership")
+    newchannel = Embed(title='WELCOME!', description= desc, color=0x8A2BE2)
+    newchannel.add_field(name="@Helpers", value=desc_Helper, inline=False)
+    if cwl:
+        newchannel.add_field(name=ping, value=ping_desc, inline=False)
+    newchannel.add_field(name="@TH#s", value=desc_TH, inline=False)
+    newchannel.add_field(name="@CoC Leadership", value=desc_leader, inline=False)
+
+    activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
+    await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
+    catObj = discord_client.get_channel(int(category[1]))
+    await ctx.send(f"Purging {category[0]}")
+    async with ctx.typing():
+        for channel in catObj.channels:
+            if len(await channel.history(limit=3).flatten()) == 1:
+                continue
+            while len(await channel.history(limit=1).flatten()) != 0:
+                deleted = await channel.purge(bulk=True)
+                await ctx.send(f"Deleted {len(deleted)} message(s) from {channel.name}")
+            await channel.send(embed=newchannel)
+
+    game = discord.Game("with cat nip~")
+    await discord_client.change_presence(status=discord.Status.online, activity=game)                       
+    await ctx.send("All done!")
+    return
+
+
+@autopurge.error
+async def autopi(ctx, error):
     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
