@@ -90,7 +90,7 @@ async def help(ctx, *option):
     pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 2.3\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nKittyLitter Version 2.4\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
@@ -701,7 +701,7 @@ async def archive(ctx, *category):
                     files = files or None
                     await dest_channel.send(send_message, files=files)
                 except Exception as e:
-                    msg = f"{e}\n{e.args}\nMessage ID: {message.id}"
+                    msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
                     await dest_channel.send(msg)
 
     await ctx.send("All done!")
