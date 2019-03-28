@@ -1120,43 +1120,44 @@ async def on_message(message):
 
 @discord_client.command()
 async def test(ctx):
-    bucket = [522530421745909760, 530387435993956353, 522530384534044682]
-    dest = discord_client.get_channel(559739614923980800)
-    #source = discord_client.get_channel(530387435993956353)
-    for i in bucket:
-        source = discord_client.get_channel(i)
-        async for message in source.history(limit = 1000000, after=(datetime.utcnow() - timedelta(days=120)), reverse=True):
-            if message.content == "**[KittyLitter]** ```.```":
-                print(message.content)
+    await discord_client.edit(username="Carla")
+    # bucket = [522530421745909760, 530387435993956353, 522530384534044682]
+    # dest = discord_client.get_channel(559739614923980800)
+    # #source = discord_client.get_channel(530387435993956353)
+    # for i in bucket:
+    #     source = discord_client.get_channel(i)
+    #     async for message in source.history(limit = 1000000, after=(datetime.utcnow() - timedelta(days=120)), reverse=True):
+    #         if message.content == "**[KittyLitter]** ```.```":
+    #             print(message.content)
 
-            elif message.content.startswith("**Archiving from"):
-                #print(message.content)
-                pass
-            elif message.content.startswith("```Archiving from"):
-                pass
-            elif message.content == ("```.```"):
-                pass
-            elif message.content == ("**[KittyLitter#7906]**"):
-                pass
-            elif message.content.startswith("Archiving from"):
-                pass
-            else:
-                send_message = (f"{message.clean_content}")
-                files = []
-                try:
-                    if message.attachments:
-                        async with aiohttp.ClientSession() as session:
-                            for attachment_obj in message.attachments:
-                                async with session.get(attachment_obj.url) as resp:
-                                    buffer = io.BytesIO(await resp.read())
-                                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
-                    files = files or None
-                    await dest.send(send_message, files=files)
-                except Exception as e:
-                    msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
-                    await dest.send(msg)
-            #print(message.content)
-    print("done")
+    #         elif message.content.startswith("**Archiving from"):
+    #             #print(message.content)
+    #             pass
+    #         elif message.content.startswith("```Archiving from"):
+    #             pass
+    #         elif message.content == ("```.```"):
+    #             pass
+    #         elif message.content == ("**[KittyLitter#7906]**"):
+    #             pass
+    #         elif message.content.startswith("Archiving from"):
+    #             pass
+    #         else:
+    #             send_message = (f"{message.clean_content}")
+    #             files = []
+    #             try:
+    #                 if message.attachments:
+    #                     async with aiohttp.ClientSession() as session:
+    #                         for attachment_obj in message.attachments:
+    #                             async with session.get(attachment_obj.url) as resp:
+    #                                 buffer = io.BytesIO(await resp.read())
+    #                                 files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+    #                 files = files or None
+    #                 await dest.send(send_message, files=files)
+    #             except Exception as e:
+    #                 msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
+    #                 await dest.send(msg)
+    #         #print(message.content)
+    # print("done")
 
 
 async def syncup(discord_client, botMode):
