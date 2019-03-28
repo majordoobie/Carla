@@ -46,7 +46,7 @@ if botMode == "liveBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
@@ -58,7 +58,7 @@ elif botMode == "devBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 # Instanciate botAssit and DB
