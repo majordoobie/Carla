@@ -947,10 +947,10 @@ async def autopurge(ctx, *category):
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
     await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
-    catObj = discord_client.get_channel(int(category[1]))
-    await ctx.send(f"Purging {category[0]}")
+
+    await ctx.send(f"Purging {category}")
     async with ctx.typing():
-        for channel in catObj.channels:
+        for channel in source_category.channels:
             if len(await channel.history(limit=3).flatten()) == 1:
                 continue
             while len(await channel.history(limit=1).flatten()) != 0:
