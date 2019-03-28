@@ -46,7 +46,7 @@ if botMode == "liveBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 elif botMode == "devBot":
@@ -58,13 +58,13 @@ elif botMode == "devBot":
         ex(f"Config file does not exist: {configLoc}")
     config.read(configLoc)
     emoticons.read(emoticonLoc)
-    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}")
+    discord_client = commands.Bot(command_prefix = f"{config[botMode]['bot_prefix']}".split(' '))
     discord_client.remove_command("help")
 
 # Instanciate botAssit and DB
 botAPI = BotAssist(botMode, configLoc)
 # coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
-
+pref = config[botMode]['bot_Prefix'].split(' ')[0]
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -76,7 +76,7 @@ async def on_ready():
     print(f'\n\nLogged in as: {discord_client.user.name} - {discord_client.user.id}\nDiscord Version: {discord.__version__}\n'
         f"\nRunning in [{botMode}] mode\n"
         "------------------------------------------\n"
-        f"Prefix set to:          {config[botMode]['bot_Prefix']}\n"
+        f"Prefix set to:          {pref}\n"
         f"Config file set to:     {configLoc}\n"
         f"DB File set to:         None\n"
         "------------------------------------------")
@@ -89,7 +89,6 @@ async def on_ready():
 #####################################################################################################################
 @discord_client.command()
 async def help(ctx, *option):
-    pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
         "\n\nKittyLitter Version 3.0\nhttps://github.com/majordoobie/KittyLitterBot2")
@@ -113,7 +112,7 @@ async def help(ctx, *option):
     autopur = (f"Combines the archive and purge commands into one.")
     help = (f"Show this help menu.\n**[Examples]**\n{pref}help --verbose")
     if len(option) == 0:
-        embed = Embed(title='Meowwww!', description="Quick view of commands:" ,color=0x8A2BE2)
+        embed = Embed(title='Meowwww!', description=f"Quick view of commands:\n Supported Prefix: {config[botMode]['bot_Prefix'].split(' ')}" ,color=0x8A2BE2)
         embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
         embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
         embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
@@ -914,7 +913,7 @@ async def autopurge(ctx, *category):
                     msg = f"{e}\n{e.args}\eMessage ID: {message.id}"
                     await dest_channel.send(msg)
 
-    await ctx.send("\n\nAll done!\nWill not start to purge the channels.")
+    await ctx.send("\n\nAll done!\nWill now start to purge the channels.")
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
 
@@ -947,10 +946,10 @@ async def autopurge(ctx, *category):
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
     await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
-    catObj = discord_client.get_channel(int(category[1]))
-    await ctx.send(f"Purging {category[0]}")
+
+    await ctx.send(f"Purging {category}")
     async with ctx.typing():
-        for channel in catObj.channels:
+        for channel in source_category.channels:
             if len(await channel.history(limit=3).flatten()) == 1:
                 continue
             while len(await channel.history(limit=1).flatten()) != 0:
@@ -964,9 +963,9 @@ async def autopurge(ctx, *category):
     return
 
 
-@autopurge.error
-async def autopi(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @autopurge.error
+# async def autopi(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def readconfig(ctx):
@@ -1120,50 +1119,54 @@ async def on_message(message):
 
 @discord_client.command()
 async def test(ctx):
-    bucket = [522530421745909760, 530387435993956353, 522530384534044682]
-    dest = discord_client.get_channel(559739614923980800)
-    #source = discord_client.get_channel(530387435993956353)
-    for i in bucket:
-        source = discord_client.get_channel(i)
-        async for message in source.history(limit = 1000000, after=(datetime.utcnow() - timedelta(days=120)), reverse=True):
-            if message.content == "**[KittyLitter]** ```.```":
-                print(message.content)
+    await discord_client.user.edit(username="Carla")
+    print("are you doing something?")
+    return
+    #await discord_client.edit(username="Carla")
+    # bucket = [522530421745909760, 530387435993956353, 522530384534044682]
+    # dest = discord_client.get_channel(559739614923980800)
+    # #source = discord_client.get_channel(530387435993956353)
+    # for i in bucket:
+    #     source = discord_client.get_channel(i)
+    #     async for message in source.history(limit = 1000000, after=(datetime.utcnow() - timedelta(days=120)), reverse=True):
+    #         if message.content == "**[KittyLitter]** ```.```":
+    #             print(message.content)
 
-            elif message.content.startswith("**Archiving from"):
-                #print(message.content)
-                pass
-            elif message.content.startswith("```Archiving from"):
-                pass
-            elif message.content == ("```.```"):
-                pass
-            elif message.content == ("**[KittyLitter#7906]**"):
-                pass
-            elif message.content.startswith("Archiving from"):
-                pass
-            else:
-                send_message = (f"{message.clean_content}")
-                files = []
-                try:
-                    if message.attachments:
-                        async with aiohttp.ClientSession() as session:
-                            for attachment_obj in message.attachments:
-                                async with session.get(attachment_obj.url) as resp:
-                                    buffer = io.BytesIO(await resp.read())
-                                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
-                    files = files or None
-                    await dest.send(send_message, files=files)
-                except Exception as e:
-                    msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
-                    await dest.send(msg)
-            #print(message.content)
-    print("done")
+    #         elif message.content.startswith("**Archiving from"):
+    #             #print(message.content)
+    #             pass
+    #         elif message.content.startswith("```Archiving from"):
+    #             pass
+    #         elif message.content == ("```.```"):
+    #             pass
+    #         elif message.content == ("**[KittyLitter#7906]**"):
+    #             pass
+    #         elif message.content.startswith("Archiving from"):
+    #             pass
+    #         else:
+    #             send_message = (f"{message.clean_content}")
+    #             files = []
+    #             try:
+    #                 if message.attachments:
+    #                     async with aiohttp.ClientSession() as session:
+    #                         for attachment_obj in message.attachments:
+    #                             async with session.get(attachment_obj.url) as resp:
+    #                                 buffer = io.BytesIO(await resp.read())
+    #                                 files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+    #                 files = files or None
+    #                 await dest.send(send_message, files=files)
+    #             except Exception as e:
+    #                 msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
+    #                 await dest.send(msg)
+    #         #print(message.content)
+    # print("done")
 
 
 async def syncup(discord_client, botMode):
     """ Function used to update the databsae with new data """
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
-        await asyncio.sleep(30)
+        await asyncio.sleep(1800)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
