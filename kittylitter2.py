@@ -112,7 +112,7 @@ async def help(ctx, *option):
     autopur = (f"Combines the archive and purge commands into one.")
     help = (f"Show this help menu.\n**[Examples]**\n{pref}help --verbose")
     if len(option) == 0:
-        embed = Embed(title='Meowwww!', description="Quick view of commands:" ,color=0x8A2BE2)
+        embed = Embed(title='Meowwww!', description=f"Quick view of commands:\n Supported Prefix: {config[botMode]['bot_Prefix'].split(' ')}" ,color=0x8A2BE2)
         embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
         embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
         embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
