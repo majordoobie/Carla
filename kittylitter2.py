@@ -14,9 +14,11 @@ import io
 from sys import exit as ex
 from sys import argv
 from os import path
+import asyncio
 
 # Delete after production
 import time
+from datetime import datetime, timedelta
 
 #####################################################################################################################
                                              # Set up the environment 
@@ -115,7 +117,7 @@ async def help(ctx, *option):
         embed.add_field(name=f"{pref}help [*options]", value=help, inline=False)
         embed.add_field(name=f"{pref}setup [*options]", value=setup, inline=False)
         embed.add_field(name=f"{pref}helper [*options]", value=helper, inline=False)
-        embed.add_field(name=f"{pref}muster", value=muster, inline=False)
+        embed.add_field(name=f"{pref}roster", value=muster, inline=False)
         embed.add_field(name=f"{pref}sync", value=sync, inline=False)
         embed.add_field(name=f"{pref}readconfig", value=readconfig, inline=False)
         embed.add_field(name=f"{pref}archive <#Category>", value=archive, inline=False)
@@ -250,7 +252,7 @@ async def kill(ctx):
         return
 
 @discord_client.command()
-async def muster(ctx):
+async def roster(ctx):
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -420,7 +422,7 @@ async def helper(ctx, action, *mention):
 
         
 @discord_client.command()
-async def setup(ctx, *option):
+async def setup(ctx, option, extra=None):
     if botAPI.rightServer(ctx, config):
         pass
     else:
@@ -441,8 +443,7 @@ async def setup(ctx, *option):
         await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
         return
 
-    option = ' '.join(option).lower()
-    if option in ["--mapping", "--roles"]:
+    if option in ["--mapping", "--roles"]: 
         pass
     else:
         desc = (f"Invalid argument used")
@@ -450,82 +451,65 @@ async def setup(ctx, *option):
         return
 
     if option == "--mapping":
-        inConfig = [ i for i in config['archive_mapping'] ]
-        categories = [ (i.name.upper(), i.id) for i in ctx.guild.categories if i.name != "ARCHIVES" ]
-        archives = []
-        for i in ctx.guild.categories:
-            if i.name.upper() == "ARCHIVES":
-                for channel in i.channels:
-                    archives.append((channel.name.upper(), channel.id))
-
-        if inConfig:
-            c = "Category"
-            a = "Archive"
-            output = f'{c:<15}-- --{a:>15}\n'
-            for k,v in config['archive_mapping'].items():
-                key = discord_client.get_channel(int(k)).name
-                val = discord_client.get_channel(int(v)).name
-                output += (f"{key:<15} > {val}\n")
-        else:
-            output = "Not configuration mapping set."
-        await ctx.send(f"*Current category to archive channel mapping:*\n```{output}```")
-        
-        await ctx.send("Would you like to edit the category to archive mapping?\n(Yes/No)")
-        msg = await discord_client.wait_for('message', check = botAPI.yesno_check)
-        if msg.content.lower() == "no":
-            await ctx.send(f"Exiting function")
+        # If extra command is nothing or list
+        if extra in [None, "list", "l"]:
+            head = "Current config set to the following:"
+            output = ""
+            for i in config['archive_mapping']:
+                output += f"{i}\n"
+            
+            if output == "":
+                output = "None"
+            await ctx.send(f"{head}\n```{output}```")
             return
-        await ctx.send("\n\n[-] Clearing mapping list")
-        for i in config['archive_mapping']:
-            config.remove_option('archive_mapping', str(i))
-        with open(configLoc, "w", encoding='utf-8')as configFile:
-            config.write(configFile)
-        await ctx.send("[+] Done")
         
-        for category in categories:
-            await ctx.send(f"\n\nPick an archive channel to map to the category: {category[0]}")
-            output = ''
-            for index, archive in enumerate(archives):
-                output += (f"[{index:>2}] {archive[0]}\n")
-            output += "[ q] Quit"
-            await ctx.send(f"```{output}```")
-            num = False
-            while num == False:
-                msg = await discord_client.wait_for('message')
-                if msg.content.lower() in ['q', 'quiz']:
-                    await ctx.send("Exiting.")
-                    return
-                elif msg.content.isdigit():
-                    if int(msg.content) in range(0, len(archives)):
-                        await ctx.send(f"```Mapping {category[0]} -> {archives[int(msg.content)][0]}```")
-                        config.set('archive_mapping', str(category[1]), str(archives[int(msg.content)][1]))
-                        archives.pop(int(msg.content))
-                        num = True
-                        break
-                await ctx.send("Either the input is not a integer or integer is out of range.")
-            # <class 'discord.channel.CategoryChannel'>
-            # <class 'discord.channel.TextChannel'>
-        c = "Category"
-        a = "Archive"
-        output = f'{c:<15}-- --{a:>15}\n'
-        for k,v in config['archive_mapping'].items():
-            key = discord_client.get_channel(int(k)).name
-            val = discord_client.get_channel(int(v)).name
-            output += (f"{key:<15} > {val}\n")
-        await ctx.send(f"```{output}```")
-        await ctx.send("Would you like to save these settings?\n(Yes/No)")
-        msg = await discord_client.wait_for('message', check = botAPI.yesno_check)
-        if msg.content.lower() == 'no':
-            await ctx.send("[-] Discarding changes")
+        # If extra command is set to clear
+        elif extra.lower() in ['c', 'clear']:
+            await ctx.send("\n\n[-] Clearing mapping list")
             for i in config['archive_mapping']:
                 config.remove_option('archive_mapping', str(i))
+            with open(configLoc, "w", encoding='utf-8')as configFile:
+                config.write(configFile)
             await ctx.send("[+] Done")
             return
-        await ctx.send("[-] Saving changes")
-        with open(configLoc, 'w', encoding='utf-8') as configFile:
-            config.write(configFile)
-        await ctx.send("[+] Done")
-        return
+
+        # If extra command is to add a category or guild
+        elif extra.lower() in ['a', 'add']:
+            categories = [ (i.name, i.id) for i in ctx.guild.categories ]
+            
+            last = 0
+            output = ""
+            for i,e  in enumerate(categories):
+                output+= f"[{i}] {e[0]}\n"
+                last = i
+
+            output += "\nEnter the index of the categories you want mapped, spaced. Or enter quit."
+            await ctx.send(output)
+            msg = await discord_client.wait_for('message')
+
+            if msg.content.lower() in ['q', 'quiz']:
+                await ctx.send("Exiting.")
+                return
+            
+            vals = msg.content.split(' ')
+            for val in vals:
+                if val.isdigit():
+                    if int(val) <= last:
+                        pass
+                    else:
+                        await ctx.send("Index out of range")
+                        return
+                else:
+                    await ctx.send("Only integers are allowed")
+                    return
+
+            for i in vals:
+                config.set('archive_mapping', categories[int(i)][0].lower(), str(categories[int(i)][1]))
+                
+            await ctx.send("[+] Saving contents")
+            with open(configLoc, "w", encoding='utf-8')as configFile:
+                config.write(configFile)
+            return
 
     elif option == "--roles":
 
@@ -634,8 +618,59 @@ async def setup(ctx, *option):
             config.write(configFile)
         await ctx.send("[+] Done")    
     
+    else:
+        await ctx.send("Invalid options used")
+
+@discord_client.command()
+async def switch(ctx, *category):
+
+    if category:
+        pass
+    else:
+        await ctx.send(embed = discord.Embed(title="ERROR", description="Category is a mandatory argument.", color=0xFF0000))
+        return
+
+    if botAPI.rightServer(ctx, config):
+        pass  
+    else:
+        desc = f"You are attempting to run a command destined for another server."
+        await ctx.send(embed = discord.Embed(title="ERROR", description=desc, color=0xFF0000))
+        await ctx.send(f"```{botAPI.serverSettings(ctx, config, discord_client)}```")
+        return
+
+    if botAPI.authorized(ctx, config):
+        pass
+    else:
+        await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
+        return
+
+    found = False
+    category = ' '.join(category).upper()
+    for i in ctx.guild.categories:
+        if category == i.name.upper():
+            found = True
+            category = i
+
+    if found == False:
+        msg = (f"The category [{category}] does not exist or it is not configured.")
+        await ctx.send(embed = discord.Embed(title="INPUT ERROR", description=msg, color=0xFF0000))
+        return
+
+    # allmembers used to set perms on the category 
+    role = ctx.guild.get_role(310460540944252939)
+    if category.overwrites_for(role).read_messages == False:
+        await category.set_permissions(role, read_messages=True)
+        await ctx.send(f"Enabled {category.name}")
+    elif category.overwrites_for(role).read_messages == True:
+        await category.set_permissions(role, read_messages=False)
+        await ctx.send(f"Disabled {category.name}")
+    else:
+        ctx.send("Sorry could not set permissions")
+        return
+    #await category.set_permissions(role, read_messages=False)
 
 
+    
 
 @discord_client.command()
 async def archive(ctx, *category):
@@ -658,21 +693,19 @@ async def archive(ctx, *category):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    category = ' '.join(category).upper()
-    for i in ctx.guild.categories:
-        if i.name.upper() != "ARCHIVES":
-            if category == i.name.upper():
-                category = ((i.name, i.id))
-    
-    if str(category[1]) in config['archive_mapping'].keys():
-        for cat, tar in config['archive_mapping'].items():
-            if str(category[1]) == cat:
-                source_category = discord_client.get_channel(int(cat))
-                dest_channel = discord_client.get_channel(int(tar))
-    else:
-        msg = (f"The category [{category[0]}] does not exist or it is not configured.")
-        await ctx.send(embed = discord.Embed(title="INPUT ERROR", description=msg, color=0xFF0000))
+    category = ' '.join(category)
+    source_id = inConfig(category, config)
+
+    if source_id == False:
+        await ctx.send(f"{category} is not configured.")
         return
+
+    source_category = discord_client.get_channel(int(source_id))
+    dest_channel = discord_client.get_channel(int(config['Discord']['archvier']))
+
+    if isinstance(source_category, discord.Guild) == False:
+        await ctx.send(f"Could not instantiate {category}")
+
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="channels get archived")
     await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
@@ -686,7 +719,7 @@ async def archive(ctx, *category):
             #await dest_channel.send(f"Starting archive from {channel.name}")
             msg = (f"Starting archive from {channel.name}")
             await dest_channel.send(embed = discord.Embed(title=msg, color=0x00FFFF))
-            async for message in channel.history(limit=10000, reverse = True, after = datetime.datetime.utcnow() - datetime.timedelta(days=50)):
+            async for message in channel.history(limit=10000, reverse = True, after = datetime.utcnow() - timedelta(days=50)):
                 if int(message.author.id) in [513291454349836289, 515978655978094603]:
                     continue
                 send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
@@ -734,17 +767,14 @@ async def purge(ctx, *category):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    exists = False
-    category = ' '.join(category).upper()
-    for i in ctx.guild.categories:
-        if i.name.upper() != "ARCHIVES":
-            if category == i.name.upper():
-                exists = True
-                category = ((i.name, i.id))
+    category = ' '.join(category)
+    source_id = inConfig(category, config)
 
-    if exists == False:
-        ctx.send(f"Could not find {category}")
+    if source_id == False:
+        await ctx.send(f"{category} is not configured.")
         return
+
+    source_category = discord_client.get_channel(int(source_id))
 
     desc = (f"I will now begin to purge {category[0]}. Please be sure to have had "
         "archived the files before continuing. This can not be undone! Would you like "
@@ -758,14 +788,15 @@ async def purge(ctx, *category):
         pass
 
     cwl = False
-    if category[1] == 530386718084562955: #elephino
+    if source_id == 530386718084562955 or source_id == 511741713908367370: #elephino & misfits
         cwl = True
         ping = "@Elephino CWL"
         ping_desc = ("Use @Elephino CWL to ping members who are also participating in your CWL team.")
-    elif category[1] == 511742081056899084: #zulu cwl
+
+    elif source_id == 511742081056899084: #zulu cwl
         cwl = True
         ping = "@Zulu CWL"
-        ping_desc = ("Use @Zulu CWL to ping members who are also participating in your CWL team.") 
+        ping_desc = ("Use @Zulu CWL to ping members who are also participating in your CWL team.")      
 
     desc = ("Please use this channel to plan your attacks. To do so, paste a screenshot of the enemy base "
         "that you are considering attacking. Then comment on how you plan to attack the enemy base. For best "
@@ -786,10 +817,13 @@ async def purge(ctx, *category):
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="messages get nuked")
     await discord_client.change_presence(status=discord.Status.dnd, activity=activity)
-    catObj = discord_client.get_channel(int(category[1]))
-    await ctx.send(f"Purging {category[0]}")
+
+
+    # grab source object 
+    source_category = discord_client.get_channel(int(category[1]))
+    await ctx.send(f"Purging {category}")
     async with ctx.typing():
-        for channel in catObj.channels:
+        for channel in source_category.channels:
             if len(await channel.history(limit=3).flatten()) == 1:
                 continue
             while len(await channel.history(limit=1).flatten()) != 0:
@@ -827,24 +861,18 @@ async def autopurge(ctx, *category):
         await ctx.send(f"Sorry, only leaders can do that. Have a nyan cat instead. <a:{config['Emoji']['nyancat_big']}>")
         return
 
-    category = ' '.join(category).upper()
-    for i in ctx.guild.categories:
-        if i.name.upper() != "ARCHIVES":
-            if category == i.name.upper():
-                category = ((i.name, i.id))
-    
-    if str(category[1]) in config['archive_mapping'].keys():
-        for cat, tar in config['archive_mapping'].items():
-            if str(category[1]) == cat:
-                source_category = discord_client.get_channel(int(cat))
-                dest_channel = discord_client.get_channel(int(tar))
-    else:
-        msg = (f"The category [{category[0]}] does not exist or it is not configured.")
-        await ctx.send(embed = discord.Embed(title="INPUT ERROR", description=msg, color=0xFF0000))
+    category = ' '.join(category)
+    source_id = inConfig(category, config)
+
+    if source_id == False:
+        await ctx.send(f"{category} is not configured.")
         return
 
+    source_category = discord_client.get_channel(int(source_id))
+    dest_channel = discord_client.get_channel(int(config['Discord']['archvier']))
+
     # Send warning
-    desc = (f"I will now begin to purge {category[0]}. Please be sure to have had "
+    desc = (f"I will now begin to purge {category}. Please be sure to have had "
         "archived the files before continuing. This can not be undone! Would you like "
         "to proceed?\n\n\nPlease Type: KittyLitterBot")
     await ctx.send(embed = Embed(title='WARNING!', description= desc, color=0xFF0000)) 
@@ -868,7 +896,7 @@ async def autopurge(ctx, *category):
             #await dest_channel.send(f"Starting archive from {channel.name}")
             msg = (f"Starting archive from {channel.name}")
             await dest_channel.send(embed = discord.Embed(title=msg, color=0x00FFFF))
-            async for message in channel.history(limit=10000, reverse = True, after = datetime.datetime.utcnow() - datetime.timedelta(days=50)):
+            async for message in channel.history(limit=10000, reverse = True, after = datetime.utcnow() - timedelta(days=50)):
                 if int(message.author.id) in [513291454349836289, 515978655978094603]:
                     continue
                 send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
@@ -891,11 +919,11 @@ async def autopurge(ctx, *category):
     await discord_client.change_presence(status=discord.Status.online, activity=game)
 
     cwl = False
-    if category[1] == 530386718084562955: #elephino
+    if source_id == 530386718084562955 or source_id == 511741713908367370: # elephino and misfits
         cwl = True
         ping = "@Elephino CWL"
         ping_desc = ("Use @Elephino CWL to ping members who are also participating in your CWL team.")
-    elif category[1] == 511742081056899084: #zulu cwl
+    elif source_id == 511742081056899084: #zulu cwl
         cwl = True
         ping = "@Zulu CWL"
         ping_desc = ("Use @Zulu CWL to ping members who are also participating in your CWL team.") 
@@ -1088,5 +1116,109 @@ async def on_message(message):
                             return
 
     await discord_client.process_commands(message)
+
+
+@discord_client.command()
+async def test(ctx):
+    bucket = [522530421745909760, 530387435993956353, 522530384534044682]
+    dest = discord_client.get_channel(559739614923980800)
+    #source = discord_client.get_channel(530387435993956353)
+    for i in bucket:
+        source = discord_client.get_channel(i)
+        async for message in source.history(limit = 1000000, after=(datetime.utcnow() - timedelta(days=120)), reverse=True):
+            if message.content == "**[KittyLitter]** ```.```":
+                print(message.content)
+
+            elif message.content.startswith("**Archiving from"):
+                #print(message.content)
+                pass
+            elif message.content.startswith("```Archiving from"):
+                pass
+            elif message.content == ("```.```"):
+                pass
+            elif message.content == ("**[KittyLitter#7906]**"):
+                pass
+            elif message.content.startswith("Archiving from"):
+                pass
+            else:
+                send_message = (f"{message.clean_content}")
+                files = []
+                try:
+                    if message.attachments:
+                        async with aiohttp.ClientSession() as session:
+                            for attachment_obj in message.attachments:
+                                async with session.get(attachment_obj.url) as resp:
+                                    buffer = io.BytesIO(await resp.read())
+                                    files.append(discord.File(fp=buffer, filename=attachment_obj.filename))
+                    files = files or None
+                    await dest.send(send_message, files=files)
+                except Exception as e:
+                    msg = f"Could not archive the following message:\n{e}\n{e.args}\nMessage ID: {message.id}"
+                    await dest.send(msg)
+            #print(message.content)
+    print("done")
+
+
+async def syncup(discord_client, botMode):
+    """ Function used to update the databsae with new data """
+    await discord_client.wait_until_ready()
+    while not discord_client.is_closed():
+        await asyncio.sleep(30)
+        game = Game("Syncing servers")
+        await discord_client.change_presence(status=discord.Status.dnd, activity=game)
+
+        zbpRoles = [ (k,v) for k,v in config['roles'].items() ]
+        missing_members = []
+        zuluGuild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+        planningGuild = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+
+        for zmember in (mem for mem in zuluGuild.members if 'CoC Members' in (rol.name for rol in mem.roles)):
+            pmember = planningGuild.get_member(zmember.id)
+            if pmember == None:
+                missing_members.append(zmember.display_name)
+                continue
+
+            # If member exists
+            if pmember.display_name != zmember.display_name:
+                try:
+                    await pmember.edit(nick=zmember.display_name, reason="KittyLitter bot Sync function @sgtmajordoobi")
+                except discord.Forbidden:
+                    pass
+            else:
+                pass
+            
+            roleStaging = []
+            for role in zmember.roles:
+                if role.name.lower() in ( roleTupe[0].lower() for roleTupe in zbpRoles ):
+                    result = next(( roleTupe[1] for roleTupe in zbpRoles if roleTupe[0].lower() == role.name.lower() ))
+                    roleObj = planningGuild.get_role(int(result))
+                    roleStaging.append(roleObj)
+                else:
+                    pass
+            
+            if str(pmember.id) in config['helpers']:
+                roleObj = planningGuild.get_role(int(config['Discord']['helper_id']))
+                roleStaging.append(roleObj)
+                
+            try:
+                await pmember.edit(roles=roleStaging, reason = "KittyLitter bot Sync function @sgtmajordoobie")
+            except discord.Forbidden:
+                pass
+
+        game = Game("with cat nip~")
+        await discord_client.change_presence(status=discord.Status.online, activity=game)
+
+def inConfig(val, config):
+    if val.lower() in ( key for key in config['archive_mapping'] ):
+        try:
+            return config['archive_mapping'][val.lower()]
+        except:
+            return False
+    else:
+        return False    
+    
+    
+
 if __name__ == "__main__":
+    discord_client.loop.create_task(syncup(discord_client, botMode))
     discord_client.run(config[botMode]['Bot_Token'])
