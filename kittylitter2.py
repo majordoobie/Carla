@@ -64,7 +64,7 @@ elif botMode == "devBot":
 # Instanciate botAssit and DB
 botAPI = BotAssist(botMode, configLoc)
 # coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
-
+pref = config[botMode]['bot_Prefix'].split(' ')[0]
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -76,7 +76,7 @@ async def on_ready():
     print(f'\n\nLogged in as: {discord_client.user.name} - {discord_client.user.id}\nDiscord Version: {discord.__version__}\n'
         f"\nRunning in [{botMode}] mode\n"
         "------------------------------------------\n"
-        f"Prefix set to:          {config[botMode]['bot_Prefix']}\n"
+        f"Prefix set to:          {pref}\n"
         f"Config file set to:     {configLoc}\n"
         f"DB File set to:         None\n"
         "------------------------------------------")
@@ -89,7 +89,6 @@ async def on_ready():
 #####################################################################################################################
 @discord_client.command()
 async def help(ctx, *option):
-    pref = config[botMode]['bot_prefix']
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
         "\n\nKittyLitter Version 3.0\nhttps://github.com/majordoobie/KittyLitterBot2")
