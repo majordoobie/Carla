@@ -1120,7 +1120,10 @@ async def on_message(message):
 
 @discord_client.command()
 async def test(ctx):
-    await discord_client.edit(username="Carla")
+    await discord_client.user.edit(username="Carla")
+    print("are you doing something?")
+    return
+    #await discord_client.edit(username="Carla")
     # bucket = [522530421745909760, 530387435993956353, 522530384534044682]
     # dest = discord_client.get_channel(559739614923980800)
     # #source = discord_client.get_channel(530387435993956353)
