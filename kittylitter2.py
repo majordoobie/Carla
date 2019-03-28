@@ -914,7 +914,7 @@ async def autopurge(ctx, *category):
                     msg = f"{e}\n{e.args}\eMessage ID: {message.id}"
                     await dest_channel.send(msg)
 
-    await ctx.send("\n\nAll done!\nWill not start to purge the channels.")
+    await ctx.send("\n\nAll done!\nWill now start to purge the channels.")
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
 
@@ -964,9 +964,9 @@ async def autopurge(ctx, *category):
     return
 
 
-@autopurge.error
-async def autopi(ctx, error):
-    await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
+# @autopurge.error
+# async def autopi(ctx, error):
+#     await ctx.send(embed = discord.Embed(title="ERROR", description=error.__str__(), color=0xFF0000))
 
 @discord_client.command()
 async def readconfig(ctx):
@@ -1163,7 +1163,7 @@ async def syncup(discord_client, botMode):
     """ Function used to update the databsae with new data """
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
-        await asyncio.sleep(30)
+        await asyncio.sleep(1800)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
