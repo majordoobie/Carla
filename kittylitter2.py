@@ -91,7 +91,7 @@ async def on_ready():
 async def help(ctx, *option):
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nKittyLitter Version 3.1\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nKittyLitter Version 3.2\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
