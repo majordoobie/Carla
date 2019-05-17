@@ -1,0 +1,36 @@
+[HISTORY]
+[Version 3.2]
+[added] Misfits as a source channel for reminding the main channel that folks are asking for help
+
+[Version 3.1]
+[added] Bot name short hands example: carla.help  | c.roster | Carla.autopurge
+
+[Version 3.0]
+[added] auto role/nickname  sync
+[changed] archive behavior now archives to one location
+[added] cwl channel hider
+[fixed] bugs preventing some messages from archiving 
+
+[Version 2.4]
+[added] autopurge command. This will handle archiving and purging together in one command
+[added] new exception handling to see what is breaking the bot
+[fix] muster/roster unsorted list
+
+[Version 2.3]
+[fix] Muster command was not embedding text in a code block on mobile devices. It was identified by Brad.
+
+[Version 2.2]
+[fix] Few errors with checking if a channel was empty
+[fix] spelling mistakes
+
+[Version 2.1]
+[update] muster function added. Used to see the current members in ZBP server separated into 3 categories. Those with CoC Members role, Bots and those without CoC Members role.
+
+[Version 2.0]
+[update]  Changed purge/archive behavior. Instead of purging/archiving, all the bot will only act on channels that have any new messages.
+[update] Add/Remove Helper role
+[update] Global Reddit Zulu Role and Nickname sync
+[update] On server join: welcome new users and sync their profile with Reddit Zulu
+[update] Identity users missing in Zulu Base Planning
+[update] Ping Reddit Zulu server when user mentions @helper in Zulu Base Planning
+[bug-fix] Replaced searching functions with generators to speed up functions
