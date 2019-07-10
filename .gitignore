@@ -3,3 +3,6 @@ Update_notes
 .DS_Store
 *pycache*
 KittyLitter.py
+.vscode/
+carlaVenv/
+.log
