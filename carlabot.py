@@ -10,7 +10,7 @@ with open("Configuration/settings.json") as jfile:
 
 # tuple of the cogs to load
 dah_cogs = (
-    "cogs.test"
+    "Cogs.test"
     )
 
 # Instanciate the bot
