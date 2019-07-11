@@ -7,3 +7,4 @@ KittyLitter.py
 carlaVenv/
 *.log
 images/
+venv_carla/

@@ -7,6 +7,7 @@ import discord
 import coc
 # APIs
 from APIs.discordBotAPI import BotAssist
+from APIs import war_check
 
 # Built ins
 import aiohttp
@@ -79,7 +80,8 @@ botAPI = BotAssist(botMode, configLoc)
 # coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 pref = config[botMode]['bot_Prefix'].split(' ')[0]
 # Get CoC client
-coc_client = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
+coc_client = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
+coc_event_client = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"], client=coc.EventsClient)
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -936,16 +938,16 @@ async def autopurge(ctx, *category):
     dest_channel = discord_client.get_channel(int(config['Discord']['archvier']))
 
     # Send warning
-    desc = (f"I will now begin to purge {category}. Please be sure to have had "
-        "archived the files before continuing. This can not be undone! Would you like "
-        "to proceed?\n\n\nPlease Type: KittyLitterBot")
-    await ctx.send(embed = Embed(title='WARNING!', description= desc, color=0xFF0000)) 
-    msg = await discord_client.wait_for('message')
-    if msg.content != 'KittyLitterBot':
-        await ctx.send("You seem unsure. Going to abort.")
-        return
-    else:
-        pass
+    if ctx.author.bot == False:
+        desc = (f"I will now begin to purge {category}. This can not be undone! Would you like "
+            "to proceed?\n\n\nPlease Type: KittyLitterBot")
+        await ctx.send(embed = Embed(title='WARNING!', description= desc, color=0xFF0000)) 
+        msg = await discord_client.wait_for('message', timeout=10)
+        if msg.content != 'KittyLitterBot':
+            await ctx.send("You seem unsure. Going to abort.")
+            return
+        else:
+            pass
 
 
     activity = discord.Activity(type = discord.ActivityType.watching, name="channels get archived")
@@ -1208,21 +1210,6 @@ async def helper_await(ctx):
 
 @discord_client.command()
 async def test(ctx):
-    #598655739137097738
-
-    guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
-    channel = guild.get_channel(598655739137097738)
-    await channel.send("**Click the emoji below to become a helper!**")
-    await ctx.invoke(discord_client.get_command("helper"), "--list" )
-    return
-    for i in ctx.guild.emojis:
-        print(i.name)
-        print(i.id)
-
-    helper = await ctx.send(f"**Become a helper by clicking the emoji!**")
-    await helper.add_reaction(":plus:598630358296297472")
-    await helper.add_reaction(":minus:598623392522043402")
-    return
     # for i in dir(coc_client):
     #     print(i)
     try:
@@ -1230,22 +1217,26 @@ async def test(ctx):
     except coc.errors.NotFound as e:
         print(f"{e}")
 
-        #598623348460879912 plus
-        #598623392522043402 minus
-
+    if result.state == "preparation":
+        print(f"{result.start_time.seconds_until} seconds till war start")
+    
     print(result.state) # notInWar
-    print(result.end_time)
-
+    #print(result.end_time.now.strftime("%H:%M:%S"))
+    #print(result.preparation_start_time.raw_time)
+    print(result.start_time.seconds_until)
+    print(result.start_time.time)
+    print(result.preparation_start_time.seconds_until)
+    print(result.preparation_start_time.now.strftime("%H:%M:%S"))
+    
+    print(type(result.start_time.time))
 
 
 async def syncup(discord_client, botMode):
-    """ Function used to update the databsae with new data """
-    print("DISABLING SUYNC")
-    return
+    """ Function used to update the databsae with new data"""
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         LOG.info("Synching servers")
-        await asyncio.sleep(7)
+        await asyncio.sleep(3600)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
@@ -1321,13 +1312,11 @@ def inConfig(val, config):
         except:
             return False
     else:
-        return False        
+        return False
 
 if __name__ == "__main__":
-    
-    #for i in dir(discord.RawReactionActionEvent()):
-     #   print(i)
-    #exit()
     discord_client.loop.create_task(syncup(discord_client, botMode))
-    #discord_client.loop.create_task(helpers_await(discord_client))
+    # create the war_check
+    #war_check_ = war_check.War_Check(discord_client, config, coc_client)
+    #discord_client.loop.create_task(war_check_.run())
     discord_client.run(config[botMode]['Bot_Token'])
