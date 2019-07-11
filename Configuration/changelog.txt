@@ -1,7 +1,7 @@
 [HISTORY]
 [Version 3.3]
 [Added] Remove user funciton. The bot already syncs with the main server so now if t he CoC Members is missing it will remove the user
-[Added] Emoji based role changes
+[Added] Emoji based role system for helpers role in #instructions-board
 
 [Version 3.2]
 [added] Misfits as a source channel for reminding the main channel that folks are asking for help

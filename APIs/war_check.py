@@ -23,7 +23,6 @@ class MyThread(threading.Thread):
         process_thread(self.wait_time)
         LOG.info(f'Stopped thread {self.name}')
 
-
 class War_Check():
     def __init__(self, discord_client, config, coc_client):
         self.bot = discord_client
@@ -89,4 +88,20 @@ class War_Check():
 
 def process_thread(wait_time):
     print(wait_time)
-    sleep(10)
+    sleep(30)
+
+
+async def zulu_war(bot, coc_client):
+    await self.bot.wait_until_ready()
+    while not self.bot.is_closed():
+        print("Hellow")
+
+async def misfits_war(bot, coc_client):
+    await self.bot.wait_until_ready()
+    while not self.bot.is_closed():
+        print("Hellow")
+
+async def elephino_war(bot, coc_client):
+    await self.bot.wait_until_ready()
+    while not self.bot.is_closed():
+        print("Hellow")
