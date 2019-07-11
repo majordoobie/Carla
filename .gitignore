@@ -5,4 +5,5 @@ Update_notes
 KittyLitter.py
 .vscode/
 carlaVenv/
-.log
+*.log
+images/

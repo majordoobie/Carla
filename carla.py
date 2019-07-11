@@ -3,6 +3,8 @@ from discord.ext import commands
 from discord import Embed, Game, Guild
 import discord
 
+# CoC
+import coc
 # APIs
 from APIs.discordBotAPI import BotAssist
 
@@ -15,11 +17,22 @@ from sys import exit as ex
 from sys import argv
 from os import path
 import asyncio
+import logging
 
 # Delete after production
 import time
 from datetime import datetime, timedelta
 
+
+# Set up logging
+# set up global logging
+LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
+HDNL = logging.FileHandler(filename='carla.log', encoding='utf-8', mode='a+')
+HDNL.setFormatter(logging.Formatter('[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Fun'
+                                    'c:%(funcName)s]\n[Path:%(pathname)s]\n MSG: %(message)s\n',
+                                    "%d %b %H:%M:%S"))
+LOG.addHandler(HDNL)
 #####################################################################################################################
                                              # Set up the environment 
 #####################################################################################################################
@@ -65,6 +78,8 @@ elif botMode == "devBot":
 botAPI = BotAssist(botMode, configLoc)
 # coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 pref = config[botMode]['bot_Prefix'].split(' ')[0]
+# Get CoC client
+coc_client = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -83,6 +98,56 @@ async def on_ready():
 
     game = Game(config[botMode]['game_msg'])
     await discord_client.change_presence(status=discord.Status.online, activity=game)
+
+@discord_client.event
+async def on_raw_reaction_add(payload):
+    if payload.message_id == 598671997962158090:
+        if payload.emoji.id == 598630358296297472: # plus
+            # Get the user
+            guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
+            member = guild.get_member(payload.user_id)
+
+            # if the exist
+            if member:
+                await helper_raw(member, guild, True)
+            else:
+                LOG.error(f"Could not get user {payload.user_id}")
+        
+        elif payload.emoji.id == 598623392522043402: # minus
+            # Get the user
+            guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
+            member = guild.get_member(payload.user_id)
+
+            # if the exist
+            if member:
+                await helper_raw(member, guild, False)
+            else:
+                LOG.error(f"Could not log get {payload.user_id}")
+
+async def helper_raw(member, guild, action):
+    if action:
+        try:
+            await member.add_roles(guild.get_role(int(config['Discord']['helper_id'])))
+            LOG.info(f"Added helper role to {member.display_name}")
+
+            config.set('helpers', f"{str(member.id)}", f"{str(member.display_name)}")
+            with open(configLoc, 'w') as configFile:
+                config.write(configFile)
+            return
+        except discord.Forbidden:
+            LOG.error(f"Could not add roles to {member.display_name}")
+            return
+    else:
+        try:
+            await member.remove_roles(guild.get_role(int(config['Discord']['helper_id'])))
+
+            config.remove_option('helpers', f"{member.id}")
+            with open(configLoc, 'w') as configFile:
+                config.write(configFile)
+            return
+        except discord.Forbidden:
+            LOG.error(f"Could not remove roles for {member.display_name}")
+            return
 
 #####################################################################################################################
                                              # Help Menu
@@ -1137,57 +1202,114 @@ async def on_message(message):
 
     await discord_client.process_commands(message)
 
+@discord_client.command()
+async def helper_await(ctx):
+    await ctx.send("hello")
 
 @discord_client.command()
 async def test(ctx):
-    pass
+    #598655739137097738
+
+    guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
+    channel = guild.get_channel(598655739137097738)
+    await channel.send("**Click the emoji below to become a helper!**")
+    await ctx.invoke(discord_client.get_command("helper"), "--list" )
+    return
+    for i in ctx.guild.emojis:
+        print(i.name)
+        print(i.id)
+
+    helper = await ctx.send(f"**Become a helper by clicking the emoji!**")
+    await helper.add_reaction(":plus:598630358296297472")
+    await helper.add_reaction(":minus:598623392522043402")
+    return
+    # for i in dir(coc_client):
+    #     print(i)
+    try:
+        result = await coc_client.get_current_war("#"+config["Clash"]["zuluclash_tag"])
+    except coc.errors.NotFound as e:
+        print(f"{e}")
+
+        #598623348460879912 plus
+        #598623392522043402 minus
+
+    print(result.state) # notInWar
+    print(result.end_time)
+
 
 
 async def syncup(discord_client, botMode):
     """ Function used to update the databsae with new data """
+    print("DISABLING SUYNC")
+    return
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
-        await asyncio.sleep(1800)
+        LOG.info("Synching servers")
+        await asyncio.sleep(7)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
         zbpRoles = [ (k,v) for k,v in config['roles'].items() ]
-        missing_members = []
-        zuluGuild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
-        planningGuild = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+        
 
-        for zmember in (mem for mem in zuluGuild.members if 'CoC Members' in (rol.name for rol in mem.roles)):
-            pmember = planningGuild.get_member(zmember.id)
+        # Guild objects 
+        zulu_guild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
+        zbp_guild = discord_client.get_guild(int(config['Discord']['plandisc_id']))
+
+        # Get a list of users in zulu_guild that have CoC Members
+        zulu_members = []
+        missing_members = []        # Members missing in zbp server
+        for zmember in (mem for mem in zulu_guild.members if 'CoC Members' in (rol.name for rol in mem.roles)):
+            # Append each zulu member to zulu_members
+            zulu_members.append(zmember)
+            # Try to get the member in zbp_guild
+            pmember = zbp_guild.get_member(zmember.id)
             if pmember == None:
                 missing_members.append(zmember.display_name)
                 continue
-
-            # If member exists
+    
+            # If member is in zbp; lets make sure that we can update their name
             if pmember.display_name != zmember.display_name:
                 try:
-                    await pmember.edit(nick=zmember.display_name, reason="KittyLitter bot Sync function @sgtmajordoobi")
+                    await pmember.edit(nick=zmember.display_name, reason="KittyLitter bot Sync function @sgtmajordoobie")
                 except discord.Forbidden:
+                    LOG.error(f"Could not edit the username of {zmember.display_name}")
                     pass
             else:
                 pass
             
+            # Add their roles
             roleStaging = []
             for role in zmember.roles:
                 if role.name.lower() in ( roleTupe[0].lower() for roleTupe in zbpRoles ):
                     result = next(( roleTupe[1] for roleTupe in zbpRoles if roleTupe[0].lower() == role.name.lower() ))
-                    roleObj = planningGuild.get_role(int(result))
+                    roleObj = zbp_guild.get_role(int(result))
                     roleStaging.append(roleObj)
                 else:
+                    LOG.error(f"Could not collect roles for {zmember.display_name}")
                     pass
             
             if str(pmember.id) in config['helpers']:
-                roleObj = planningGuild.get_role(int(config['Discord']['helper_id']))
+                roleObj = zbp_guild.get_role(int(config['Discord']['helper_id']))
                 roleStaging.append(roleObj)
                 
             try:
                 await pmember.edit(roles=roleStaging, reason = "KittyLitter bot Sync function @sgtmajordoobie")
             except discord.Forbidden:
+                LOG.error(f"Could not edit the roles of {zmember.display_name}")
                 pass
+
+        # Now remove users who are not in the clan anymore
+        for member in zbp_guild.members:
+            if member not in zulu_members:
+                if member.bot == False:
+                    try:
+                        await member.kick(reason=f"See PantherLily for reason: p.lookup -n {member.display_name}")
+                        LOG.info(f"Removed {member.display_name}")
+                        channel = zbp_guild.get_channel(513568696988598282)
+                        await channel.send(f"Removed {member.display_name}. Please use `p.lookup -n {member.display_name}` for more information.")
+                    except:
+                        LOG.error(f"Could not remove {member.display_name}")        
 
         game = Game("with cat nip~")
         await discord_client.change_presence(status=discord.Status.online, activity=game)
@@ -1199,10 +1321,13 @@ def inConfig(val, config):
         except:
             return False
     else:
-        return False    
-    
-    
+        return False        
 
 if __name__ == "__main__":
+    
+    #for i in dir(discord.RawReactionActionEvent()):
+     #   print(i)
+    #exit()
     discord_client.loop.create_task(syncup(discord_client, botMode))
+    #discord_client.loop.create_task(helpers_await(discord_client))
     discord_client.run(config[botMode]['Bot_Token'])
