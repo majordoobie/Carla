@@ -19,6 +19,7 @@ from sys import argv
 from os import path
 import asyncio
 import logging
+import traceback
 
 # Delete after production
 import time
@@ -1237,6 +1238,7 @@ async def syncup(discord_client, botMode):
     while not discord_client.is_closed():
         LOG.info("Synching servers")
         await asyncio.sleep(3600)
+        #await asyncio.sleep(5)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
@@ -1277,7 +1279,6 @@ async def syncup(discord_client, botMode):
                     roleObj = zbp_guild.get_role(int(result))
                     roleStaging.append(roleObj)
                 else:
-                    LOG.error(f"Could not collect roles for {zmember.display_name}")
                     pass
             
             if str(pmember.id) in config['helpers']:
@@ -1299,8 +1300,9 @@ async def syncup(discord_client, botMode):
                         LOG.info(f"Removed {member.display_name}")
                         channel = zbp_guild.get_channel(513568696988598282)
                         await channel.send(f"Removed {member.display_name}. Please use `p.lookup -n {member.display_name}` for more information.")
-                    except:
+                    except Exception:
                         LOG.error(f"Could not remove {member.display_name}")        
+                        print(traceback.print_exc())
 
         game = Game("with cat nip~")
         await discord_client.change_presence(status=discord.Status.online, activity=game)
