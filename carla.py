@@ -581,8 +581,7 @@ async def setup(ctx, option, extra=None):
     elif option == "--roles":
 
         await ctx.send(f"Role config--")
-        r = "Roles"
-        output = f'{r}\n'
+        output = f'{"Roles"}\n'
         for role in config['roles']:
             output += f"{role}\n"
         await ctx.send(f"```{output}```")
@@ -629,7 +628,7 @@ async def setup(ctx, option, extra=None):
                 await ctx.send(embed = discord.Embed(title="ERROR", description=err, color=0xFF0000))
                 return
 
-        output = f'{r:^15}:\n'
+        output = f'{"Roles":^15}:\n'
         for selection in selections:
             output += f"[{selection:>2}] {(zuluGuild.roles[int(selection)].name)}\n"
         await ctx.send(f"```{output}```\nWould you like to keep your selection above?\n(Yes/No)")
