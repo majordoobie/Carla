@@ -162,7 +162,7 @@ async def helper_raw(member, guild, action):
 async def help(ctx, *option):
     # Commands
     kill = (f"Send terminate singnal to bot to save memory contents to disc followed by a shut down\n "
-        "\n\nCarla Version 3.3\nhttps://github.com/majordoobie/KittyLitterBot2")
+        "\n\nCarla Version 3.4\nhttps://github.com/majordoobie/KittyLitterBot2")
     archive = (f"Scan channels under category argument provided for new messages. If "
         "new messages are found - copy all contents to the mapped archive channel. See "
         "setup to configure archive channels")
