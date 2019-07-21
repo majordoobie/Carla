@@ -16,20 +16,24 @@ import datetime
 import io
 from sys import exit as ex
 from sys import argv
-from os import path
+from os import path, chdir
 import asyncio
 import logging
+import traceback
 
 # Delete after production
 import time
 from datetime import datetime, timedelta
 
+# Set working dir
+WORK_DIR = '/home/doob/Documents/Bots/KittyLitterBot2'
+chdir(WORK_DIR)
 
 # Set up logging
 # set up global logging
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
-HDNL = logging.FileHandler(filename='carla.log', encoding='utf-8', mode='a+')
+HDNL = logging.FileHandler(filename='carla.log', encoding='utf-8', mode='w')
 HDNL.setFormatter(logging.Formatter('[%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Fun'
                                     'c:%(funcName)s]\n[Path:%(pathname)s]\n MSG: %(message)s\n',
                                     "%d %b %H:%M:%S"))
@@ -1236,12 +1240,11 @@ async def syncup(discord_client, botMode):
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         LOG.info("Synching servers")
-        await asyncio.sleep(3600)
+        await asyncio.sleep(10)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
         zbpRoles = [ (k,v) for k,v in config['roles'].items() ]
-        
 
         # Guild objects 
         zulu_guild = discord_client.get_guild(int(config['Discord']['zuludisc_id']))
@@ -1264,7 +1267,10 @@ async def syncup(discord_client, botMode):
                 try:
                     await pmember.edit(nick=zmember.display_name, reason="KittyLitter bot Sync function @sgtmajordoobie")
                 except discord.Forbidden:
-                    LOG.error(f"Could not edit the username of {zmember.display_name}")
+                    if pmember.id not in [178989365953822720 , 265368254761926667 , 205344025740312576, 344958710885515264]:
+                        print(pmember.name)
+                        print(pmember.id)
+                        LOG.error(f"Could not edit the username of {zmember.display_name}")
                     pass
             else:
                 pass
@@ -1274,11 +1280,11 @@ async def syncup(discord_client, botMode):
             for role in zmember.roles:
                 if role.name.lower() in ( roleTupe[0].lower() for roleTupe in zbpRoles ):
                     result = next(( roleTupe[1] for roleTupe in zbpRoles if roleTupe[0].lower() == role.name.lower() ))
-                    roleObj = zbp_guild.get_role(int(result))
+                    try:
+                        roleObj = zbp_guild.get_role(int(result))
+                    except:
+                        LOG.error(f"Could not collect roles {role.name}")
                     roleStaging.append(roleObj)
-                else:
-                    LOG.error(f"Could not collect roles for {zmember.display_name}")
-                    pass
             
             if str(pmember.id) in config['helpers']:
                 roleObj = zbp_guild.get_role(int(config['Discord']['helper_id']))
@@ -1287,7 +1293,8 @@ async def syncup(discord_client, botMode):
             try:
                 await pmember.edit(roles=roleStaging, reason = "KittyLitter bot Sync function @sgtmajordoobie")
             except discord.Forbidden:
-                LOG.error(f"Could not edit the roles of {zmember.display_name}")
+                if pmember.id not in [178989365953822720 , 265368254761926667 , 205344025740312576, 344958710885515264]:
+                    LOG.error(f"Could not edit the roles of {zmember.display_name}")
                 pass
 
         # Now remove users who are not in the clan anymore
