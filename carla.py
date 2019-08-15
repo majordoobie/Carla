@@ -789,7 +789,7 @@ async def archive(ctx, *category):
             #await dest_channel.send(f"Starting archive from {channel.name}")
             msg = (f"Starting archive from {channel.name}")
             await dest_channel.send(embed = discord.Embed(title=msg, color=0x00FFFF))
-            async for message in channel.history(limit=10000, reverse = True, after = datetime.utcnow() - timedelta(days=50)):
+            async for message in channel.history(limit=10000, reverse=True, after=datetime.utcnow() - timedelta(days=50)):
                 if int(message.author.id) in [513291454349836289, 515978655978094603]:
                     continue
                 send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
@@ -966,7 +966,8 @@ async def autopurge(ctx, *category):
             #await dest_channel.send(f"Starting archive from {channel.name}")
             msg = (f"Starting archive from {channel.name}")
             await dest_channel.send(embed = discord.Embed(title=msg, color=0x00FFFF))
-            async for message in channel.history(limit=10000, reverse = True, after = datetime.utcnow() - timedelta(days=50)):
+            # async for message in channel.history(limit=10000, reverse=True, after = datetime.utcnow() - timedelta(days=50)):
+            async for message in channel.history(limit=10000, after = datetime.utcnow() - timedelta(days=50)):
                 if int(message.author.id) in [513291454349836289, 515978655978094603]:
                     continue
                 send_message = (f"**[{message.author.display_name}]** {message.clean_content}")
@@ -1214,25 +1215,7 @@ async def helper_await(ctx):
 
 @discord_client.command()
 async def test(ctx):
-    # for i in dir(coc_client):
-    #     print(i)
-    try:
-        result = await coc_client.get_current_war("#"+config["Clash"]["zuluclash_tag"])
-    except coc.errors.NotFound as e:
-        print(f"{e}")
-
-    if result.state == "preparation":
-        print(f"{result.start_time.seconds_until} seconds till war start")
-    
-    print(result.state) # notInWar
-    #print(result.end_time.now.strftime("%H:%M:%S"))
-    #print(result.preparation_start_time.raw_time)
-    print(result.start_time.seconds_until)
-    print(result.start_time.time)
-    print(result.preparation_start_time.seconds_until)
-    print(result.preparation_start_time.now.strftime("%H:%M:%S"))
-    
-    print(type(result.start_time.time))
+    print(dir(ctx.channel.history))
 
 
 async def syncup(discord_client, botMode):
@@ -1240,7 +1223,7 @@ async def syncup(discord_client, botMode):
     await discord_client.wait_until_ready()
     while not discord_client.is_closed():
         LOG.info("Synching servers")
-        await asyncio.sleep(10)
+        await asyncio.sleep(3600)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
