@@ -49,7 +49,7 @@ def main():
             print(f"Failed to load extention {cog}", file=sys.stderr)
 
 @bot.event
-async def on_ready():
+async def on_ready(): 
     print("Logged on bitch")
 
 
