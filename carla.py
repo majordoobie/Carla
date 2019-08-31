@@ -584,8 +584,7 @@ async def setup(ctx, option, extra=None):
     elif option == "--roles":
 
         await ctx.send(f"Role config--")
-        r = "Roles"
-        output = f'{r}\n'
+        output = f'{"Roles"}\n'
         for role in config['roles']:
             output += f"{role}\n"
         await ctx.send(f"```{output}```")
@@ -632,7 +631,7 @@ async def setup(ctx, option, extra=None):
                 await ctx.send(embed = discord.Embed(title="ERROR", description=err, color=0xFF0000))
                 return
 
-        output = f'{r:^15}:\n'
+        output = f'{"Roles":^15}:\n'
         for selection in selections:
             output += f"[{selection:>2}] {(zuluGuild.roles[int(selection)].name)}\n"
         await ctx.send(f"```{output}```\nWould you like to keep your selection above?\n(Yes/No)")
@@ -1224,6 +1223,7 @@ async def syncup(discord_client, botMode):
     while not discord_client.is_closed():
         LOG.info("Synching servers")
         await asyncio.sleep(3600)
+        #await asyncio.sleep(5)
         game = Game("Syncing servers")
         await discord_client.change_presence(status=discord.Status.dnd, activity=game)
 
@@ -1268,6 +1268,8 @@ async def syncup(discord_client, botMode):
                     except:
                         LOG.error(f"Could not collect roles {role.name}")
                     roleStaging.append(roleObj)
+                else:
+                    pass
             
             if str(pmember.id) in config['helpers']:
                 roleObj = zbp_guild.get_role(int(config['Discord']['helper_id']))
@@ -1289,8 +1291,9 @@ async def syncup(discord_client, botMode):
                         LOG.info(f"Removed {member.display_name}")
                         channel = zbp_guild.get_channel(513568696988598282)
                         await channel.send(f"Removed {member.display_name}. Please use `p.lookup -n {member.display_name}` for more information.")
-                    except:
+                    except Exception:
                         LOG.error(f"Could not remove {member.display_name}")        
+                        print(traceback.print_exc())
 
         game = Game("with cat nip~")
         await discord_client.change_presence(status=discord.Status.online, activity=game)
