@@ -2,6 +2,7 @@
 from discord.ext import commands
 from discord import Embed, Game, Guild
 import discord
+from pathlib import Path
 
 # CoC
 import coc
@@ -26,8 +27,9 @@ import time
 from datetime import datetime, timedelta
 
 # Set working dir
-WORK_DIR = '/home/doob/Documents/Bots/KittyLitterBot2'
-chdir(WORK_DIR)
+WORK_DIR = Path(__file__).parent
+# WORK_DIR = '/home/doob/Documents/Bots/KittyLitterBot2'
+# chdir(WORK_DIR)
 
 # Set up logging
 # set up global logging

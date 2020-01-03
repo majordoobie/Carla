@@ -8,3 +8,4 @@ carlaVenv/
 *.log
 images/
 venv_carla/
+.idea/
