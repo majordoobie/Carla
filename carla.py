@@ -83,11 +83,12 @@ elif botMode == "devBot":
 
 # Instanciate botAssit and DB
 botAPI = BotAssist(botMode, configLoc)
-# coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
+#coc_client = ClashConnectAPI(config['Clash']['ZuluClash_Token'])
 pref = config[botMode]['bot_Prefix'].split(' ')[0]
 # Get CoC client
-coc_client = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
+#coc_client = coc.Client(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #coc_event_client = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"], client=coc.EventsClient)
+coc_client = coc.login(config["CoC_API"]["Username"], config["CoC_API"]["Password"])
 #####################################################################################################################
                                              # Discord Commands [info]
 #####################################################################################################################
@@ -114,13 +115,12 @@ async def on_raw_reaction_add(payload):
             # Get the user
             guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
             member = guild.get_member(payload.user_id)
-
             # if the exist
             if member:
                 await helper_raw(member, guild, True)
             else:
                 LOG.error(f"Could not get user {payload.user_id}")
-        
+
         elif payload.emoji.id == 598623392522043402: # minus
             # Get the user
             guild = discord_client.get_guild(int(config["Discord"]["plandisc_id"]))
@@ -133,6 +133,15 @@ async def on_raw_reaction_add(payload):
                 LOG.error(f"Could not log get {payload.user_id}")
 
 async def helper_raw(member, guild, action):
+    # helper_id = int(config['Discord']['helper_id'])
+    # helper_role = guild.get_role(helper_id)
+    # if action:
+    #     if helper_role not in member.roles:
+    #         roles = member.roles
+    #         roles.append(helper_role)
+    #         await member.edit(roles=roles)
+    # #await member.add_roles(helper_role)
+
     if action:
         try:
             await member.add_roles(guild.get_role(int(config['Discord']['helper_id'])))
@@ -1310,7 +1319,10 @@ def inConfig(val, config):
         return False
 
 if __name__ == "__main__":
-    discord_client.loop.create_task(syncup(discord_client, botMode))
+    #update = d_sync.UpdateLoop(discord_client, dbconn, botMode, coc_client2, config)
+    #discord_client.loop.create_task(update.run())
+    #sync_up = syncup(discord_client, botMode)
+    #discord_client.loop.create_task(syncup)
     # create the war_check
     #war_check_ = war_check.War_Check(discord_client, config, coc_client)
     #discord_client.loop.create_task(war_check_.run())
