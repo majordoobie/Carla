@@ -4,4 +4,12 @@ Update_notes
 *pycache*
 KittyLitter.py
 carlaVenv/
+<<<<<<< Updated upstream
 .vscode/
+=======
+*.log
+images/
+venv_carla/
+.idea/
+keys.py
+>>>>>>> Stashed changes
