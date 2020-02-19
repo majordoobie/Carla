@@ -2,8 +2,8 @@
     "devMode" : {
         "bot_config" : {
             "bot_name" : "Carla Bot [Dev Shell]",
-            "bot_token" : "NTE1OTc4NjU1OTc4MDk0NjAz.DzOXNA.NmVmNfaNDqkth9qp4rS0WvMafls",
-            "bot_id" : "515978655978094603",
+            "bot_token" : "",
+            "bot_id" : "",
             "bot_usr" : "https://discordapp.com/api/oauth2/authorize?client_id=515978655978094603&scope=bot&permissions=1543892081"
         },
         "guild_config" : {
