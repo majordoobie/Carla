@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  carla_bot:
+    container_name: carla_bot
+    restart: always
+    build: .
+    # Volume that Dockerfile is creating
+    volumes:
+      - .:/usr/src/app
+    networks:
+      - carla_network
+networks:
+  carla_network:
+    name: carla_network
+    driver: bridge
