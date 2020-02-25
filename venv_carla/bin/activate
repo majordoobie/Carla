@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/home/doob/Documents/Bots/KittyLitterBot2/venv_carla"
+VIRTUAL_ENV="/Users/anker/Documents/cyberdomain/python/Carla/venv_carla"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

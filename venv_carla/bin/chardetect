@@ -1,5 +1,4 @@
-#!/home/doob/Documents/Bots/KittyLitterBot2/venv_carla/bin/python3
-
+#!/Users/anker/Documents/cyberdomain/python/Carla/venv_carla/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
