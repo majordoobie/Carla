@@ -2,6 +2,7 @@
 
 
 ## Run the bot:
-    `1` Set up private/keys/keys.py
-    `2` Modify docker-compose.yml to run the script
-    `3` docker-compose up -d
+
+`1` Set up private/keys/keys.py
+`2` Modify docker-compose.yml to run the script
+`3` docker-compose up -d
