@@ -12,12 +12,14 @@ from pathlib import Path
 from discord import Embed, Status, Game, HTTPException, InvalidData
 from discord.errors import Forbidden
 from discord.ext import commands
-from logs.database import BotDatabase
-import keys
+
+# Private
+from private.keys import settings
+from private.database.database import BotDatabase
 
 # Global
-BOT_LOG = Path('logs/bot_log.log')
-DB_LOCATION = 'logs/carla_db.sqlite'
+BOT_LOG = Path('private/logs/carla.log')
+DB_LOCATION = 'private/database/carla_db.sqlite'
 DESCRIPTION = 'Bot is used to manage discord servers for war planning'
 COG_PATH = 'cogs.'
 COG_TUPLE = (
@@ -32,9 +34,9 @@ EMBED_COLORS = {
 
 
 class BotClient(commands.Bot):
-    def __init__(self, bot_config, keys, bot_mode, db_conn):
+    def __init__(self, bot_config, settings, bot_mode, db_conn):
         self.bot_config = bot_config
-        self.keys = keys
+        self.settings = settings
         self.bot_mode = bot_mode
         self.cog_path = COG_PATH
         self.cog_tupe = COG_TUPLE
@@ -106,7 +108,7 @@ class BotClient(commands.Bot):
         await self.embed_print(ctx, title='COMMAND ERROR',
                                description=str(error), color='red')
 
-    async def embed_print(self, ctx, title=None, description=None, color='blue', codeblock=False):
+    async def embed_print(self, ctx, title='', description=None, color='blue', codeblock=False, _return=False):
         """
         Method used to standardized how stuff is printed to the users
         Parameters
@@ -118,23 +120,24 @@ class BotClient(commands.Bot):
 
         Returns
         -------
-
         """
         if len(description) < 1000:
             if codeblock:
                 description = f'```{description}```'
             embed = Embed(
-                title=f'__{title}__',
+                title=f'{title}',
                 description=description,
                 color=EMBED_COLORS[color]
             )
             embed.set_footer(text=self.bot_config['version'])
+            if _return:
+                return embed
             await ctx.send(embed=embed)
         else:
             blocks = await self.text_splitter(description, codeblock)
             embed_list = []
             embed_list.append(Embed(
-                title=f'__{title}__',
+                title=f'{title}',
                 description=blocks[0],
                 color=EMBED_COLORS[color]
             ))
@@ -214,7 +217,7 @@ def main(bot_mode):
     db_conn = None
     try:
         db_conn = BotDatabase(DB_LOCATION)
-        bot = BotClient(bot_config=keys.bot_config(bot_mode), keys=keys, bot_mode=bot_mode, db_conn=db_conn)
+        bot = BotClient(bot_config=settings.bot_config(bot_mode), settings=settings, bot_mode=bot_mode, db_conn=db_conn)
         bot.run()
 
     except Exception as error:

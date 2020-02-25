@@ -18,10 +18,21 @@ class BotConfigurator(commands.Cog):
 
     @setup.command(name='roles')
     async def setup_roles(self, ctx, *, args=None):
-
+        # Get current roles supported
         rows = self.db_conn.fetch_table('helpers')
-        print(rows)
+        if not rows:
+            await self.bot.embed_print(ctx, title='SETUP: Roles', color='green',
+                                   description=f'No roles currently configured')
+        else:
+            # TODO: Add code for printing out the roles
+            print("TODO")
 
+        #resp = await self.bot.wait_for('message')
+        msg = "Would you like to add roles, clear roles, or cancel?"
+        panel = await self.bot.embed_print(ctx, title='SETUP: Roles', color='green',
+                                           description=f'{msg}', _return=True)
+        print(dir(panel))
+        # TODO: Add the rest of your emojis here
 
 def setup(bot):
     bot.add_cog(BotConfigurator(bot))

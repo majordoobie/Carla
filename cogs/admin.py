@@ -16,13 +16,8 @@ class Administrator(commands.Cog):
     @commands.command(aliases=['kill'])
     async def _logout(self, ctx):
         self.log.info("Initiating logout phase")
-
-        try:
-            await asyncio.wait_for(self.bot.pool.close(), timeout=5.0)
-        except asyncio.TimeoutError:
-            self.log.error("Force send terminate() on connection pool")
-
-        self.log.info("Connection pool closed")
+        await self.bot.embed_print(ctx, color='green',
+                                   description=f'Closing connection to discord')
         await self.bot.logout()
 
     @commands.check(utils.is_owner)
