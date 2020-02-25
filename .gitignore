@@ -1,11 +1,17 @@
-*.ini
-Update_notes
+# env
+__pycache__
+.idea
+.vscode
 .DS_Store
-*pycache*
-KittyLitter.py
-carlaVenv/
-.vscode/
-*/settings.json
-.idea/
-*.log
-keys.py
+
+# Virtual env
+venv_carla/*
+
+# Configs 
+private/*
+
+# Ignore backup
+Archive/*
+
+# Database
+database/*.db
