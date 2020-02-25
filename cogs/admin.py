@@ -12,6 +12,15 @@ class Administrator(commands.Cog):
         self.bot = bot
         self.log = logging.getLogger('root.cogs.administrator')
 
+    async def error_print(self, ctx, title='**Cog Error**', error=None):
+        if not title.startswith('**C'):
+            title = f'**Cog Error:** {title}'
+
+        if not isinstance(error, str):
+            error = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+
+        await self.bot.embed_print(ctx, title=title, color='red',
+                                       description=error)
     @commands.check(utils.is_owner)
     @commands.command(aliases=['kill'])
     async def _logout(self, ctx):
@@ -26,12 +35,19 @@ class Administrator(commands.Cog):
         cog = f'{self.bot.cog_path}{cog}'
         try:
             self.bot.load_extension(cog)
-        except:
-            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='red',
-                                       description=f'`{cog}` not found')
+
+        except commands.errors.ExtensionNotFound as error:
+            await self.error_print(ctx, 'ExtensionNotFound', error=f'Extention `{cog}` was not found')
             return
+        except commands.errors.ExtensionFailed as error:
+            await self.error_print(ctx, 'ExtensionFailed', error)
+            return
+        except Exception as error:
+            await self.error_print(ctx, error=error)
+            return
+            
         await self.bot.embed_print(ctx, title='COG COMMAND', color='green',
-                                   description=f'Loaded `{cog}` successfully')
+                                    description=f'Loaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
     @commands.command(aliases=['unload'])
@@ -112,6 +128,18 @@ class Administrator(commands.Cog):
         else:
             await self.bot.embed_print(ctx, color='red', description='Invalid bool')
 
+    @commands.check(utils.is_owner)
+    @commands.command()
+    async def emoji_print(self, ctx):
+        panel = ''
+        for emoji in ctx.guild.emojis:
+            print(f'"{emoji.name}": "<:{emoji.name}:{emoji.id}>",')
+            if emoji.animated:
+                panel += (f'<a:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
+            else:
+                panel += (f'<:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
+        #await self.bot.embed_print(ctx, color='green', description=panel)
+        #await ctx.send(panel)
 
 def setup(bot):
     bot.add_cog(Administrator(bot))

@@ -14,7 +14,7 @@ from discord.errors import Forbidden
 from discord.ext import commands
 
 # Private
-from private.keys import settings
+from private.keys.settings import Settings
 from private.database.database import BotDatabase
 
 # Global
@@ -24,7 +24,9 @@ DESCRIPTION = 'Bot is used to manage discord servers for war planning'
 COG_PATH = 'cogs.'
 COG_TUPLE = (
     'cogs.admin',
-    'cogs.bot_setup'
+    'cogs.bot_setup',
+    'cog.bbb',
+    'cog.123'
 )
 EMBED_COLORS = {
     'blue': 0x000080,       # info
@@ -34,36 +36,64 @@ EMBED_COLORS = {
 
 
 class BotClient(commands.Bot):
-    def __init__(self, bot_config, settings, bot_mode, db_conn):
-        self.bot_config = bot_config
+    def __init__(self, settings, db_conn):
         self.settings = settings
-        self.bot_mode = bot_mode
         self.cog_path = COG_PATH
         self.cog_tupe = COG_TUPLE
         self.db_conn = db_conn
         self.debug = False
-        super().__init__(command_prefix=self.bot_config['bot_prefix'])
+        super().__init__(command_prefix=self.settings.bot_config['bot_prefix'])
         self.log = logging.getLogger('root.CarlaBot')
+        #self.log_channel = await self.get_log_channel()
+
+    async def get_log_channel(self):
+        channel = await self.fetch_channel(self.settings.carla_log)
+        print(channel)
+        print(dir(self))
+        guild = self.get_guild(self.settings.zbp_server)
+        return guild.get_channel(self.settings.carla_log)
 
     def run(self):
         print('Loading cogs...')
+        self.load_errors = []
         for extension in COG_TUPLE:
             try:
                 self.load_extension(extension)
             except Exception as error:
                 exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
                 print(exc)
+                self.load_errors.append((extension, exc))
 
         print('Cogs loaded - establishing connection...')
-        super().run(self.bot_config['bot_token'], reconnect=True)
+        super().run(self.settings.bot_config['bot_token'], reconnect=True)
 
     async def on_resumed(self):
         self.log.info('Resumed connection from lost connection')
 
     async def on_ready(self):
-        print("connected")
+        # Setting up guild objects
+        self.log.info('Bot loadedChecking for errors')
+        self.zbp_server = self.get_guild(self.settings.zbp_server)
+        self.zulu_server = self.get_guild(self.settings.zulu_server)
+        self.log_channel = self.zbp_server.get_channel(self.settings.carla_log)
+
+        
         self.log.info('Bot successfully logged on')
-        await self.change_presence(status=Status.online, activity=Game(name=self.bot_config['version']))
+        await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
+
+        # Print load cog errors to channel
+        if self.load_errors:
+            for k,v in self.load_errors:
+                self.log.error(v)
+                await self.embed_print(
+                    ctx=self.log_channel,
+                    title=f'**Cog Load Error:** {k}',
+                    description=v,
+                    color='red'
+                )
+
+        print("connected")
+
 
     # Commands
     async def on_command(self, ctx):
@@ -129,7 +159,7 @@ class BotClient(commands.Bot):
                 description=description,
                 color=EMBED_COLORS[color]
             )
-            embed.set_footer(text=self.bot_config['version'])
+            embed.set_footer(text=self.settings.bot_config['version'])
             if _return:
                 return embed
             await ctx.send(embed=embed)
@@ -146,7 +176,7 @@ class BotClient(commands.Bot):
                     description=i,
                     color=EMBED_COLORS[color]
                 ))
-            embed_list[-1].set_footer(text=self.bot_config['version'])
+            embed_list[-1].set_footer(text=self.settings.bot_config['version'])
             for i in embed_list:
                 await ctx.send(embed=i)
 
@@ -217,7 +247,8 @@ def main(bot_mode):
     db_conn = None
     try:
         db_conn = BotDatabase(DB_LOCATION)
-        bot = BotClient(bot_config=settings.bot_config(bot_mode), settings=settings, bot_mode=bot_mode, db_conn=db_conn)
+        settings = Settings(bot_mode)
+        bot = BotClient(settings=settings, db_conn=db_conn)
         bot.run()
 
     except Exception as error:
