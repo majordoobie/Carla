@@ -8,8 +8,8 @@ __pycache__
 venv_carla/*
 
 # Configs 
-private/logs
 private/keys/keys.py
+private/logs/*.log
 
 # Ignore backup
 Archive/*
