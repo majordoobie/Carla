@@ -29,9 +29,10 @@ COG_TUPLE = (
     'cog.123'
 )
 EMBED_COLORS = {
-    'blue': 0x000080,       # info
-    'red': 0xff0010,        # error
-    'green': 0x00ff00       # success
+    'info': 0x000080,       # blue
+    'error': 0xff0010,      # red
+    'success': 0x00ff00,    # green
+    'warning': 0xFFFF00     # yellow
 }
 
 
@@ -41,61 +42,79 @@ class BotClient(commands.Bot):
         self.cog_path = COG_PATH
         self.cog_tupe = COG_TUPLE
         self.db_conn = db_conn
-        self.debug = False
-        super().__init__(command_prefix=self.settings.bot_config['bot_prefix'])
         self.log = logging.getLogger('root.CarlaBot')
-        #self.log_channel = await self.get_log_channel()
 
-    async def get_log_channel(self):
-        channel = await self.fetch_channel(self.settings.carla_log)
-        print(channel)
-        print(dir(self))
-        guild = self.get_guild(self.settings.zbp_server)
-        return guild.get_channel(self.settings.carla_log)
+        # List for storing tracebacks during cog load so we can send to log channel
+        self.load_errors = []
+
+        # Objects needed to access server objects. These are loaded after the bot is
+        # connected to discord
+        self.zbp_server = None
+        self.zulu_server = None
+        self.log_channel = None
+
+        # This can be set through the bot to enable traceback prints in discord
+        self.debug = False
+
+        # This instantiates the bot object into self
+        super().__init__(command_prefix=self.settings.bot_config['bot_prefix'])
 
     def run(self):
-        print('Loading cogs...')
-        self.load_errors = []
+        self.log.info('Loading cogs...')
         for extension in COG_TUPLE:
             try:
                 self.load_extension(extension)
             except Exception as error:
+                # Create a string object out of the traceback
                 exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-                print(exc)
                 self.load_errors.append((extension, exc))
+                self.log.error(exc)
 
-        print('Cogs loaded - establishing connection...')
+        if self.load_errors:
+            print('Errors detected, but able to connect. Check logs')
+            self.log.info('Errors detected, but able to connect. Check logs')
+        else:
+            print('Cogs loaded - establishing connection...')
+
+        # Connect bot to discord
         super().run(self.settings.bot_config['bot_token'], reconnect=True)
 
     async def on_resumed(self):
         self.log.info('Resumed connection from lost connection')
+        await self.embed_print(
+            ctx=self.log_channel,
+            description='Resumed connection from lost connection',
+            color='error'
+        )
 
     async def on_ready(self):
         # Setting up guild objects
-        self.log.info('Bot loadedChecking for errors')
         self.zbp_server = self.get_guild(self.settings.zbp_server)
         self.zulu_server = self.get_guild(self.settings.zulu_server)
         self.log_channel = self.zbp_server.get_channel(self.settings.carla_log)
 
-        
-        self.log.info('Bot successfully logged on')
+        # Change presence to version number
         await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
 
         # Print load cog errors to channel
         if self.load_errors:
-            for k,v in self.load_errors:
+            for k, v in self.load_errors:
                 self.log.error(v)
                 await self.embed_print(
                     ctx=self.log_channel,
                     title=f'**Cog Load Error:** {k}',
                     description=v,
-                    color='red'
+                    color='warning'
                 )
 
-        print("connected")
+        self.log.info('Bot is connected')
+        print('Bot is connected')
+        await self.embed_print(
+            ctx=self.log_channel,
+            description='Connection established',
+            color='success'
+        )
 
-
-    # Commands
     async def on_command(self, ctx):
         await ctx.message.channel.trigger_typing()
 
@@ -110,13 +129,13 @@ class BotClient(commands.Bot):
             original = error.original
             # Catch errors such as roles not found
             if isinstance(original, InvalidData):
-                await self.embed_print(ctx, title='INVALID OPERATION', color='red',
+                await self.embed_print(ctx, title='INVALID OPERATION', color='error',
                                        description=original.args[0])
                 return
 
             # Catch permission issues
             elif isinstance(original, Forbidden):
-                await self.embed_print(ctx, title='FORBIDDEN', color='red',
+                await self.embed_print(ctx, title='FORBIDDEN', color='error',
                                        description='Even with proper permissions, the target user must be lower in the '
                                        'role hierarchy of this bot.')
                 return
@@ -125,20 +144,20 @@ class BotClient(commands.Bot):
         if isinstance(error, commands.CheckFailure):
             try:
                 if error.args[0] == 'Not owner':
-                    await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='red',
+                    await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='error',
                                            description='Only Doobie can run this command')
                     return
             except:
                 pass
-            await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='red',
+            await self.embed_print(ctx, title='COMMAND FORBIDDEN', color='error',
                                    description='Only `CoC Leadership` are permitted to use this command')
             return
 
         # Catch all
         await self.embed_print(ctx, title='COMMAND ERROR',
-                               description=str(error), color='red')
+                               description=str(error), color='error')
 
-    async def embed_print(self, ctx, title='', description=None, color='blue', codeblock=False, _return=False):
+    async def embed_print(self, ctx, title='', description=None, color='info', codeblock=False, _return=False):
         """
         Method used to standardized how stuff is printed to the users
         Parameters

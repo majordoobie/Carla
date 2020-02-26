@@ -19,13 +19,13 @@ class Administrator(commands.Cog):
         if not isinstance(error, str):
             error = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
-        await self.bot.embed_print(ctx, title=title, color='red',
+        await self.bot.embed_print(ctx, title=title, color='error',
                                        description=error)
     @commands.check(utils.is_owner)
     @commands.command(aliases=['kill'])
     async def _logout(self, ctx):
         self.log.info("Initiating logout phase")
-        await self.bot.embed_print(ctx, color='green',
+        await self.bot.embed_print(ctx, color='success',
                                    description=f'Closing connection to discord')
         await self.bot.logout()
 
@@ -46,7 +46,7 @@ class Administrator(commands.Cog):
             await self.error_print(ctx, error=error)
             return
             
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='green',
+        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
                                     description=f'Loaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
@@ -56,10 +56,10 @@ class Administrator(commands.Cog):
         try:
             self.bot.unload_extension(cog)
         except:
-            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='red',
+            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='error',
                                        description=f'`{cog}` not found')
             return
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='green',
+        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
                                    description=f'Unloaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
@@ -71,10 +71,10 @@ class Administrator(commands.Cog):
             self.bot.unload_extension(cog)
             self.bot.load_extension(cog)
         except:
-            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='red',
+            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='error',
                                        description=f'`{cog}` not found')
             return
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='green',
+        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
                                    description=f'Reloaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
@@ -100,7 +100,7 @@ class Administrator(commands.Cog):
         reload_cog = self.bot.get_command('re_load')
         run_command = self.bot.get_command(parsed_command[1])
         if run_command is None:
-            await self.bot.embed_print(ctx, title='COMMAND ERROR', color='red',
+            await self.bot.embed_print(ctx, title='COMMAND ERROR', color='error',
                                        description=f'Command `{parsed_command[1]}` not found')
             return
 
@@ -121,12 +121,12 @@ class Administrator(commands.Cog):
     async def set_debug(self, ctx, status):
         if status.lower() in ('f', 'false'):
             self.bot.debug = False
-            await self.bot.embed_print(ctx, color='green', description='Debugging disabled')
+            await self.bot.embed_print(ctx, color='success', description='Debugging disabled')
         elif status.lower() in ('t', 'true'):
             self.bot.debug = True
-            await self.bot.embed_print(ctx, color='green', description='Debugging enabled')
+            await self.bot.embed_print(ctx, color='success', description='Debugging enabled')
         else:
-            await self.bot.embed_print(ctx, color='red', description='Invalid bool')
+            await self.bot.embed_print(ctx, color='error', description='Invalid bool')
 
     @commands.check(utils.is_owner)
     @commands.command()
@@ -138,7 +138,7 @@ class Administrator(commands.Cog):
                 panel += (f'<a:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
             else:
                 panel += (f'<:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
-        #await self.bot.embed_print(ctx, color='green', description=panel)
+        #await self.bot.embed_print(ctx, color='success', description=panel)
         #await ctx.send(panel)
 
 def setup(bot):

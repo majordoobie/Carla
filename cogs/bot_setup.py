@@ -23,8 +23,8 @@ class BotConfigurator(commands.Cog):
         # Get current roles supported
         rows = self.db_conn.fetch_table('helpers')
         if not rows:
-            await self.bot.embed_print(ctx, color='blue',
-                                   description=f'No roles currently configured')
+            await self.bot.embed_print(ctx, color='info',
+                                       description=f'No roles currently configured')
         else:
             # TODO: Add code for printing out the roles
             print("TODO")
@@ -34,8 +34,8 @@ class BotConfigurator(commands.Cog):
                f"{self.bot.settings.emojis['add']} `Add Roles`\n"
                f"{self.bot.settings.emojis['reset']} `Clear Roles`\n"
                f"{self.bot.settings.emojis['cancel']} `Cancel Operation`")
-        embed_out = await self.bot.embed_print(ctx, title='Role Setup Menu', color='blue',
-                                           description=f'{msg}', _return=True)
+        embed_out = await self.bot.embed_print(ctx, title='Role Setup Menu', color='info',
+                                               description=f'{msg}', _return=True)
         panel = await ctx.send(embed=embed_out)
         raw_emojis = (
             f"{self.bot.settings.emojis['add']}",
@@ -44,7 +44,6 @@ class BotConfigurator(commands.Cog):
         )
         for raw_emoji in raw_emojis:
             await panel.add_reaction(raw_emoji)
-
 
         # Interpret the actions to be taken
         def check(reaction, user):
