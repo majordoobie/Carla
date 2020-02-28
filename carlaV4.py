@@ -82,7 +82,7 @@ class BotClient(commands.Bot):
         await self.embed_print(
             ctx=self.log_channel,
             description='Resumed connection from lost connection',
-            color='error'
+            color='warning'
         )
 
     async def on_ready(self):
@@ -120,7 +120,8 @@ class BotClient(commands.Bot):
         if self.debug:
             exc = ''.join(
                 traceback.format_exception(type(error), error, error.__traceback__, chain=True))
-            await self.embed_print(ctx, title='DEBUG ENABLED', description=f'{exc}', codeblock=True)
+            await self.embed_print(ctx, title='DEBUG ENABLED', description=f'{exc}',
+                                   codeblock=True, color='warning')
 
         # Catch all errors within command logic
         if isinstance(error, commands.CommandInvokeError):

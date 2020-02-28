@@ -64,17 +64,12 @@ class BotConfigurator(commands.Cog):
             await self.set_roles(ctx)
 
     async def set_roles(self, ctx):
-        def check(reaction, user):
-            if user != ctx.message.author:
-                return False
-            if str(reaction.emoji) in raw_emojis:
-                return True
-        # TODO: You are here need to finish getting the page working
+        # Set the variable needed to track the information
         emoji = self.bot.settings.emojis
         panel = ''
-        roles_dict = {}
-        roles_list = []
-        indexer = {}
+        roles_dict = {}         # {role1: {}, role2: {}}
+        roles_list = []         # [role1, role2]
+        indexer = {}            # {'1': (0, 9), '2': (10, 19)}
         for role in self.bot.zulu_server.roles:
             if role.name == '@everyone':
                 continue
@@ -91,42 +86,108 @@ class BotConfigurator(commands.Cog):
         # Get range blocks
         blocks = ceil(len(roles_list) / 10)
         for block in range(1, blocks+1):
+            # {'1': (0, 9), '2': (10, 19)}
             indexer[str(block)] = ((block * 10 - 10), (block * 10 - 1))
 
+        # Get the first panel and msg object
+        panel = get_panel_embed(roles_list[0:9], roles_dict, emoji)
+        embed_panel = await self.bot.embed_print(ctx, description=panel, _return=True)
+        msg_output = await ctx.send(embed=embed_panel)
+        await set_buttons(ctx, msg_output, emoji)
+
+        # Create the check for the wait for
+        def check(reaction, user):
+            """A couple checks to make sure we stay complient"""
+            # Test that only the user executing the command
+            if not ctx.author.id == user.id:
+                return False
+            # Make sure that the reaction is for the correct message
+            if not msg_output.id == reaction.message.id:
+                return False
+            # Make sure we ignore the bot
+            if user.bot:
+                return False
+            return True
+
+        # After first message is out we can focus on using it
         iterate = True
         index = 1
         while iterate:
-            block = indexer[str(index)]
-            sector = roles_list[block[0]:block[1]]
-            panel = ''
-            for idx, role_name in enumerate(sector):
-                number = f'rcs{str(idx + 1)}'
-                if roles_dict[role_name]['picked']:
-                    mark = 'checked'
-                else:
-                    mark = 'unchecked'
-                panel += f'{emoji[number]} {emoji[mark]} {role_name}\n'
-            display = await self.bot.embed_print(ctx, description=panel, _return=True)
-            display = await ctx.send(embed=display)
-            for idx in range(block[0], block[1]):
-                number = f'rcs{str(idx + 1)}'
-                await display.add_reaction(emoji[number])
-            await display.add_reaction(emoji['delete'])
-            await display.add_reaction(emoji['save'])
-            await display.add_reaction(emoji['right'])
-            return
+            try:
+                # Wait for the user interaction
+                reaction, user = await ctx.bot.wait_for('reaction_add', timeout=60, check=check)
+                # Clear the pick so it looks nicer
+                await msg_output.remove_reaction(reaction, user)
 
-        return
-        # for index, block in enumerate(blocks):
+                # If role was picked
+                if reaction.emoji.name.startswith('rcs'):
+                    num = reaction.emoji.name.lstrip('rcs')                 # Strips the num from 'rcs#'
+                    role_set = roles_list[indexer[str(index)][0]:indexer[str(index)][1]]  # takes the role set
+                    chosen_role = role_set[int(num) - 1]
+                    print(chosen_role)
+                    # Modify the dictionary
+                    if roles_dict[chosen_role]['picked']:
+                        roles_dict[chosen_role]['picked'] = False
+                    else:
+                        roles_dict[chosen_role]['picked'] = True
+                elif reaction.emoji.name == 'delete':
+                    await msg_output.delete()
+                    iterate = False
+
+                # Get a new panel
+                block = indexer[str(index)]                 # {'1': (0, 9)}
+                role_names = roles_list[block[0]:block[1]]  # roles_list[0, 9]
+                panel = get_panel_embed(role_names, roles_dict, emoji)
+                embed_panel = await self.bot.embed_print(ctx, description=panel, _return=True)
+                await msg_output.edit(embed=embed_panel)
+
+                # # Now get the set of roles to pick
+                # block = indexer[str(index)]                 # {'1': (0, 9)}
+                # role_names = roles_list[block[0]:block[1]]  # roles_list[0, 9]
+
+            except asyncio.TimeoutError:
+                await msg_output.clear_reactions()
+
+        #     # Variables for controlling flow
+        #     block = indexer[str(index)]                    # {'1': (0, 9)
+        #     role_names = roles_list[block[0]:block[1]]     # roles_list[0, 9]
         #
-        # for index, role in enumerate(self.bot.zulu_server.roles[0:40]):
-        #     num = f'rcs{str(index+1)}'
-        #     panel += f'{emoji[num]} {emoji["checked"]} {role.name}\n'
-        # await self.bot.embed_print(ctx, description=panel)
+        #     # Create the panel to be printed
+        #     panel = get_panel_embed(role_names, roles_dict, emoji)
         #
-        # for i in range(0, 10):
-        #     number = f'rcs{str(i)}'
-        #     await ctx.send(f'{self.bot.settings.emojis[f"{number}"]}')
+        #     # Get the display object and add the reactions to it
+        #     display = await self.bot.embed_print(ctx, description=panel, _return=True)
+        #     display = await ctx.send(embed=display)
+        #
+        #
+        #     reaction, user = await ctx.bot.wait_for('reaction_add', timeout=60.0)
+        #     index += 1
+
+
+def get_panel_embed(roles_names, roles_dict, emoji):
+    """Returns the formatted panel to be places inside the embed"""
+    panel = ('**Select the roles you want to configure:**\n'
+             f'`  ` {emoji["delete"]} `Cancel operation`\n'
+             f'`  ` {emoji["save"]} `Save settings and commit`\n'
+             f'`  ` {emoji["right"]} `Next page`\n\n')
+    for idx, role_name in enumerate(roles_names):
+        emoji_num = f'rcs{str(idx + 1)}'
+        if roles_dict[role_name]['picked']:
+            mark = 'checked'
+        else:
+            mark = 'unchecked'
+        panel += f'{emoji[emoji_num]} {emoji[mark]} {role_name}\n'
+    return panel
+
+
+async def set_buttons(ctx, display, emoji):
+    """Puts the emojis on the panel"""
+    for idx in range(0, 9):
+        number = f'rcs{str(idx + 1)}'
+        await display.add_reaction(emoji[number])
+    await display.add_reaction(emoji['delete'])
+    await display.add_reaction(emoji['save'])
+    await display.add_reaction(emoji['right'])
 
 def setup(bot):
     bot.add_cog(BotConfigurator(bot))
