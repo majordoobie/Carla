@@ -1,5 +1,6 @@
 import private.keys.keys as keys
 
+
 class Settings:
     def __init__(self, bot_mode):
         self.bot_mode = bot_mode
@@ -144,7 +145,12 @@ emoji_dict = {
     "rcs33": "<:rcs33:570030367122128901>",
     "rcs35": "<:rcs35:570030367134973962>",
     "rcs25": "<:rcs25:570030367399084042>",
-    "rcs28": "<:rcs28:570030368422363136>"
+    "rcs28": "<:rcs28:570030368422363136>",
+    "unchecked": "<:unchecked:682641854432542725>",
+    "checked": "<:checked:682641854554177579>",
+    "right": "<:right:682765217410711687>",
+    "left": "<:left:682765217414775013>",
+    "save": "<:save:682765217528152065>"
 }
 
 

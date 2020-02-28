@@ -1,3 +1,5 @@
+from math import ceil
+
 import asyncio
 from discord.ext import commands
 import logging
@@ -62,12 +64,69 @@ class BotConfigurator(commands.Cog):
             await self.set_roles(ctx)
 
     async def set_roles(self, ctx):
-        #self.zbp_server
-        # TODO: Print roles with numbers and have the user pick them one at a time
-        role_objects = ( role for role in self.zbp_server.roles )
-        for i in range(0, 10):
-            number = f'rcs{str(i)}'
-            await ctx.send(f'{self.bot.settings.emojis[f"{number}"]}')
+        def check(reaction, user):
+            if user != ctx.message.author:
+                return False
+            if str(reaction.emoji) in raw_emojis:
+                return True
+        # TODO: You are here need to finish getting the page working
+        emoji = self.bot.settings.emojis
+        panel = ''
+        roles_dict = {}
+        roles_list = []
+        indexer = {}
+        for role in self.bot.zulu_server.roles:
+            if role.name == '@everyone':
+                continue
+            roles_dict[role.name] = {
+                'name': role.name,
+                'role': role,
+                'picked': False
+            }
+            roles_list.append(role.name)
+
+        # Sort list
+        roles_list.sort(key=lambda x: x.lower())
+
+        # Get range blocks
+        blocks = ceil(len(roles_list) / 10)
+        for block in range(1, blocks+1):
+            indexer[str(block)] = ((block * 10 - 10), (block * 10 - 1))
+
+        iterate = True
+        index = 1
+        while iterate:
+            block = indexer[str(index)]
+            sector = roles_list[block[0]:block[1]]
+            panel = ''
+            for idx, role_name in enumerate(sector):
+                number = f'rcs{str(idx + 1)}'
+                if roles_dict[role_name]['picked']:
+                    mark = 'checked'
+                else:
+                    mark = 'unchecked'
+                panel += f'{emoji[number]} {emoji[mark]} {role_name}\n'
+            display = await self.bot.embed_print(ctx, description=panel, _return=True)
+            display = await ctx.send(embed=display)
+            for idx in range(block[0], block[1]):
+                number = f'rcs{str(idx + 1)}'
+                await display.add_reaction(emoji[number])
+            await display.add_reaction(emoji['delete'])
+            await display.add_reaction(emoji['save'])
+            await display.add_reaction(emoji['right'])
+            return
+
+        return
+        # for index, block in enumerate(blocks):
+        #
+        # for index, role in enumerate(self.bot.zulu_server.roles[0:40]):
+        #     num = f'rcs{str(index+1)}'
+        #     panel += f'{emoji[num]} {emoji["checked"]} {role.name}\n'
+        # await self.bot.embed_print(ctx, description=panel)
+        #
+        # for i in range(0, 10):
+        #     number = f'rcs{str(i)}'
+        #     await ctx.send(f'{self.bot.settings.emojis[f"{number}"]}')
 
 def setup(bot):
     bot.add_cog(BotConfigurator(bot))

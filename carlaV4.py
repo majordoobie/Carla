@@ -25,8 +25,6 @@ COG_PATH = 'cogs.'
 COG_TUPLE = (
     'cogs.admin',
     'cogs.bot_setup',
-    'cog.bbb',
-    'cog.123'
 )
 EMBED_COLORS = {
     'info': 0x000080,       # blue

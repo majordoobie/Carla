@@ -68,9 +68,8 @@ async def arg_parser(arg_dict, arg_string):
         missing_flags = await get_missing_flags(required_flags, arg_dict)
         raise RuntimeError(get_req_arguments_not_used(missing_flags))
 
-
     # create parsed_args
-    arg_list = arg_string.split()
+    arg_list = parse_arg_string(arg_string)
 
     # Main parser
     for flag, dictionary in arg_dict.items():
@@ -165,3 +164,27 @@ def get_req_arguments_not_used(missing_flags):
     return ('\nRequired argument(s) were not used \n\n '
             f'-> `{missing_flags}`')
 
+def parse_arg_string(args):
+    """Split the arguments into a list and keep quoted strings together"""
+    arg_list = args.split()
+    new_list = []
+    counter = 0
+    while counter < len(arg_list):
+        word = arg_list[counter]
+        if not word.startswith('"'):
+            counter += 1
+            new_list.append(word)
+        else:
+            iterate = True
+            index = counter + 1
+            while iterate:
+                next_word = arg_list[index]
+                if next_word.endswith('"'):
+                    word = f'{word} {next_word}'
+                    new_list.append(word.strip('"'))
+                    counter = index + 1
+                    iterate = False
+                else:
+                    word = f'{word} {next_word}'
+                    index += 1
+    return new_list

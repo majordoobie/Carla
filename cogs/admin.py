@@ -1,11 +1,10 @@
-import asyncio
 from discord.ext import commands
 import logging
 import traceback
-from discord import Forbidden, NotFound, HTTPException
 
+# Custom
 from .utils import discord_utils as utils
-
+from .utils.discord_arg_parser import arg_parser
 
 class Administrator(commands.Cog):
     def __init__(self, bot):
@@ -13,6 +12,19 @@ class Administrator(commands.Cog):
         self.log = logging.getLogger('root.cogs.administrator')
 
     async def error_print(self, ctx, title='**Cog Error**', error=None):
+        """
+        Method is used to consolidate the error outputs since we have to keep
+        casting a traceback objects into strings we can just do them here.
+
+        :param ctx:
+            Conversation context
+        :param title:
+            Title to use for the embed
+        :param error:
+            If string, print the string else convert to a string traceback
+        :return:
+            None
+        """
         if not title.startswith('**C'):
             title = f'**Cog Error:** {title}'
 
@@ -20,13 +32,19 @@ class Administrator(commands.Cog):
             error = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
         await self.bot.embed_print(ctx, title=title, color='error',
-                                       description=error)
+                                   description=error)
+
     @commands.check(utils.is_owner)
     @commands.command(aliases=['kill'])
     async def _logout(self, ctx):
         self.log.info("Initiating logout phase")
         await self.bot.embed_print(ctx, color='success',
                                    description=f'Closing connection to discord')
+        await self.bot.embed_print(
+            ctx=self.bot.log_channel,
+            description='Connection Closed',
+            color='success'
+        )
         await self.bot.logout()
 
     @commands.check(utils.is_owner)
@@ -36,8 +54,8 @@ class Administrator(commands.Cog):
         try:
             self.bot.load_extension(cog)
 
-        except commands.errors.ExtensionNotFound as error:
-            await self.error_print(ctx, 'ExtensionNotFound', error=f'Extention `{cog}` was not found')
+        except commands.errors.ExtensionNotFound:
+            await self.error_print(ctx, 'ExtensionNotFound', error=f'Extension `{cog}` was not found')
             return
         except commands.errors.ExtensionFailed as error:
             await self.error_print(ctx, 'ExtensionFailed', error)
@@ -46,8 +64,8 @@ class Administrator(commands.Cog):
             await self.error_print(ctx, error=error)
             return
             
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
-                                    description=f'Loaded `{cog}` successfully')
+        await self.bot.embed_print(ctx, color='success',
+                                   description=f'Loaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
     @commands.command(aliases=['unload'])
@@ -55,30 +73,44 @@ class Administrator(commands.Cog):
         cog = f'{self.bot.cog_path}{cog}'
         try:
             self.bot.unload_extension(cog)
-        except:
-            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='error',
-                                       description=f'`{cog}` not found')
+
+        except commands.errors.ExtensionNotFound:
+            await self.error_print(ctx, 'ExtensionNotFound', error=f'Extension `{cog}` was not found')
             return
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
+        except commands.errors.ExtensionFailed as error:
+            await self.error_print(ctx, 'ExtensionFailed', error)
+            return
+        except Exception as error:
+            await self.error_print(ctx, error=error)
+            return
+
+        await self.bot.embed_print(ctx, color='success',
                                    description=f'Unloaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
-    @commands.command(aliases=['re'])
+    @commands.command()
     async def re_load(self, ctx, cog: str):
         cog = f'{self.bot.cog_path}{cog}'
 
         try:
             self.bot.unload_extension(cog)
             self.bot.load_extension(cog)
-        except:
-            await self.bot.embed_print(ctx, title='COG LOAD ERROR', color='error',
-                                       description=f'`{cog}` not found')
+
+        except commands.errors.ExtensionNotFound:
+            await self.error_print(ctx, 'ExtensionNotFound', error=f'Extension `{cog}` was not found')
             return
-        await self.bot.embed_print(ctx, title='COG COMMAND', color='success',
+        except commands.errors.ExtensionFailed as error:
+            await self.error_print(ctx, 'ExtensionFailed', error)
+            return
+        except Exception as error:
+            await self.error_print(ctx, error=error)
+            return
+
+        await self.bot.embed_print(ctx, color='success',
                                    description=f'Reloaded `{cog}` successfully')
 
     @commands.check(utils.is_owner)
-    @commands.command()
+    @commands.command(aliases=['re'])
     async def re_run(self, ctx, *, args):
         """
         Command method used to reload a cog and run a command afterwards. This simply calls
@@ -93,20 +125,40 @@ class Administrator(commands.Cog):
         args : str
             String containing the cog to reload and command to run
         """
-        # Parse the arguments
-        parsed_command = args.split(' ', 2)
+        arg_dict = {
+            'run_cmd': {
+                'default': None,
+                'flags': ['-r', '--run'],
+                'switch': False,
+                'switch_action': 'False',
+                'required': False
+            },
+            'cmd_args': {
+                'default': None,
+                'flags': ['-a', '--args'],
+                'switch': False,
+                'switch_action': 'False',
+                'required': False
+            }
+        }
+        parsed_args = await arg_parser(arg_dict, args)
+        cog_to_reload = parsed_args['positional']
 
-        # Get the commands to run
-        reload_cog = self.bot.get_command('re_load')
-        run_command = self.bot.get_command(parsed_command[1])
-        if run_command is None:
-            await self.bot.embed_print(ctx, title='COMMAND ERROR', color='error',
-                                       description=f'Command `{parsed_command[1]}` not found')
-            return
+        # Get the reload object
+        reload = self.bot.get_command('re_load')
+        await ctx.invoke(reload, cog_to_reload)
 
-        # Run commands
-        await ctx.invoke(reload_cog, parsed_command[0])
-        await ctx.invoke(run_command, parsed_command[-1])
+        # Optional command to run after reload
+        if parsed_args['run_cmd']:
+            run_cmd = self.bot.get_command(parsed_args['run_cmd'])
+            if run_cmd is None:
+                await self.error_print(ctx, 'ExtensionNotFound',
+                                       error=f'Extension `{parsed_args["run_cmd"]}` was not found')
+                return
+            if parsed_args['cmd_args']:
+                await ctx.invoke(run_cmd, parsed_args['cmd_args'])
+            else:
+                await ctx.invoke(run_cmd)
 
     @commands.check(utils.is_owner)
     @commands.command()
@@ -114,7 +166,7 @@ class Administrator(commands.Cog):
         output = ''
         for i in self.bot.cog_tupe:
             output += f"`{i.split('.')[-1]}`\n"
-        await self.bot.embed_print(ctx, title='COG LIST', description=output)
+        await self.bot.embed_print(ctx, title='Cog List', description=output)
 
     @commands.check(utils.is_owner)
     @commands.command()
@@ -135,11 +187,11 @@ class Administrator(commands.Cog):
         for emoji in ctx.guild.emojis:
             print(f'"{emoji.name}": "<:{emoji.name}:{emoji.id}>",')
             if emoji.animated:
-                panel += (f'<a:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
+                panel += f'<a:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n'
             else:
-                panel += (f'<:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n')
-        #await self.bot.embed_print(ctx, color='success', description=panel)
-        #await ctx.send(panel)
+                panel += f'<:{emoji.name}:{emoji.id}> `{emoji.id} | {emoji.name}`\n'
+        await ctx.send(panel)
+
 
 def setup(bot):
     bot.add_cog(Administrator(bot))
