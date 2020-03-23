@@ -14,6 +14,7 @@ from discord.errors import Forbidden
 from discord.ext import commands
 
 # Private
+from set_logging import set_logging, set_logging2, set_logging3
 from private.keys.settings import Settings
 from private.database.database import BotDatabase
 
@@ -24,7 +25,7 @@ DESCRIPTION = 'Bot is used to manage discord servers for war planning'
 COG_PATH = 'cogs.'
 COG_TUPLE = (
     'cogs.admin',
-    'cogs.bot_setup',
+    #'cogs.bot_setup',
 )
 EMBED_COLORS = {
     'info': 0x000080,       # blue
@@ -90,6 +91,11 @@ class BotClient(commands.Bot):
         self.zbp_server = self.get_guild(self.settings.zbp_server)
         self.zulu_server = self.get_guild(self.settings.zulu_server)
         self.log_channel = self.zbp_server.get_channel(self.settings.carla_log)
+
+        # Set logging
+        #self.log = await set_logging(self.log_channel)
+        #self.log = set_logging2(self.log_channel)
+        set_logging3()
 
         # Change presence to version number
         await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
@@ -195,6 +201,9 @@ class BotClient(commands.Bot):
                     color=EMBED_COLORS[color]
                 ))
             embed_list[-1].set_footer(text=self.settings.bot_config['version'])
+            if _return:
+                return embed_list
+
             for i in embed_list:
                 await ctx.send(embed=i)
 
@@ -247,6 +256,7 @@ def setup_logging():
         maxBytes=100000000,
         backupCount=2
     )
+    log_handler.setLevel(logging.DEBUG)
 
     formatter = logging.Formatter('''\
 [%(asctime)s]:[%(levelname)s]:[%(name)s]:[Line:%(lineno)d][Func:%(funcName)s]
@@ -261,7 +271,7 @@ MSG: %(message)s
 
 def main(bot_mode):
     """Starts the bot"""
-    log = setup_logging()
+    #log = setup_logging()
     db_conn = None
     try:
         db_conn = BotDatabase(DB_LOCATION)
@@ -272,13 +282,13 @@ def main(bot_mode):
     except Exception as error:
         exc = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
         print(exc)
-        log.error(exc)
+        #log.error(exc)
 
     finally:
-        print("closing db")
         if db_conn:
             print("closing db")
             db_conn.close_db()
+
 
 
 if __name__ == '__main__':

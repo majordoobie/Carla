@@ -257,7 +257,7 @@ class BotConfigurator(commands.Cog):
                     new_current = await self.bot.embed_print(ctx, color='info',
                                                              description=panel,
                                                              _return=True)
-                    await current_selections.edit(embed=new_current)
+                    #await current_selections.edit(embed=new_current)
                     return
 
                 # Get a new panel
