@@ -1,20 +1,16 @@
 from argparse import ArgumentParser
-import asyncio
-import datetime
-from discord import Embed
-import json
 import logging
 import logging.handlers
 import traceback
 from pathlib import Path
 
 # Non-built ins
-from discord import Embed, Status, Game, HTTPException, InvalidData
+from discord import Embed, Status, Game, InvalidData
 from discord.errors import Forbidden
 from discord.ext import commands
 
 # Private
-from set_logging import set_logging, set_logging2, set_logging3
+from Logging.set_logging import set_logging2
 from private.keys.settings import Settings
 from private.database.database import BotDatabase
 
@@ -93,9 +89,17 @@ class BotClient(commands.Bot):
         self.log_channel = self.zbp_server.get_channel(self.settings.carla_log)
 
         # Set logging
+        #logging.getLogger("chardet.charsetprober").disabled = True
         #self.log = await set_logging(self.log_channel)
-        #self.log = set_logging2(self.log_channel)
-        set_logging3()
+        #self.log = await set_logging2(self.log_channel)
+        from Logging import setup_logging
+        from Logging.setup_logging import BotLogger
+        #self.log = await setup_logging.setup()
+        self.log = BotLogger(webhook_url=self.settings.webhook_url,
+                             file_path="private/logs/carla.log").logger
+
+        self.log.error("Testing queue pipe logging")
+        #self.log = set_logging3(self.log_channel)
 
         # Change presence to version number
         await self.change_presence(status=Status.online, activity=Game(name=self.settings.bot_config['version']))
@@ -126,6 +130,7 @@ class BotClient(commands.Bot):
         if self.debug:
             exc = ''.join(
                 traceback.format_exception(type(error), error, error.__traceback__, chain=True))
+
             await self.embed_print(ctx, title='DEBUG ENABLED', description=f'{exc}',
                                    codeblock=True, color='warning')
 

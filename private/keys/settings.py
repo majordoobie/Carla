@@ -3,6 +3,7 @@ import private.keys.keys as keys
 
 class Settings:
     def __init__(self, bot_mode):
+        self.webhook_url = keys.webhook_url
         self.bot_mode = bot_mode
         self.emojis = emoji_dict
         self.bot_config = self.get_config()
@@ -29,6 +30,8 @@ class Settings:
                 'bot_prefix': ['dev.', 'd.', 'D.'],
                 'version': 'Carla [BETA] 4.0.0',
                 }
+
+
 emoji_dict = {
     "one": "<:one:531449976891637770>",
     "two": "<:two:531450019711025162>",

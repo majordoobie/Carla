@@ -6,7 +6,7 @@ services:
     build: .
     # Volume that Dockerfile is creating
     volumes:
-      - .:/usr/src/app
+      - .:/project
     networks:
       - carla_network
 networks:

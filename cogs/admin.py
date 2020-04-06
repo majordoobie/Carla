@@ -31,6 +31,7 @@ class Administrator(commands.Cog):
         if not isinstance(error, str):
             error = ''.join(traceback.format_exception(type(error), error, error.__traceback__, chain=True))
 
+        self.log.info(error)
         await self.bot.embed_print(ctx, title=title, color='error',
                                    description=error)
 
@@ -163,6 +164,9 @@ class Administrator(commands.Cog):
     @commands.check(utils.is_owner)
     @commands.command()
     async def list_cogs(self, ctx):
+        print("before")
+        self.log.error('%s', ctx)
+        print('seven')
         output = ''
         for i in self.bot.cog_tupe:
             output += f"`{i.split('.')[-1]}`\n"
