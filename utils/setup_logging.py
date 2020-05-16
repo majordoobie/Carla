@@ -1,12 +1,12 @@
-import asyncio
-
-import aiohttp
 from discord import Webhook, RequestsWebhookAdapter, Embed
 
 # Logging modules
 import logging
 from logging.handlers import QueueHandler, QueueListener
 from queue import Queue
+
+# Private
+from utils.embed_print import embed_print
 
 # Format for logs
 DEFAULT_FORMAT = ('''\
@@ -32,13 +32,32 @@ class DiscordWebhookHandler(logging.Handler):
     def discord_log(self, record):
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
         color = self.get_color(record.levelname)
-        embed = Embed(title='Error',
-                      description=record.msg,
-                      color=color)
-        #embed.set_footer(record.name)
-        print(record.levelname)
-        print(record.msg)
-        print('Logger name: ' + record.name)
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop()
+        embed=loop.run_until_complete(
+            embed_print(
+                title='Error',
+                description=record.msg,
+                color=record.levelname,
+                _return=True
+            )
+        )
+        #newfeature = asyncio.get_event_loop().run_until_complete()
+        # embed = embed_print(
+        #     title='Error',
+        #     description=record.msg,
+        #     color=color,
+        #     _return=True
+        # )
+        # embed = Embed(title='Error',
+        #               description=record.msg,
+        #               color=color)
+        # #embed.set_footer(record.name)
+        # print(record.levelname)
+        # print(record.msg)
+        # print('Logger name: ' + record.name)
         webhook.send(embed=embed, username='Carla Logger Webhook')
 
     def get_color(self, levelname):
