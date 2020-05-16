@@ -1,14 +1,12 @@
 import asyncio
 
 import aiohttp
-from discord import Webhook, AsyncWebhookAdapter, RequestsWebhookAdapter, Embed
+from discord import Webhook, RequestsWebhookAdapter, Embed
 
 # Logging modules
 import logging
 from logging.handlers import QueueHandler, QueueListener
 from queue import Queue
-
-from pathlib import Path
 
 # Format for logs
 DEFAULT_FORMAT = ('''\
@@ -33,8 +31,24 @@ class DiscordWebhookHandler(logging.Handler):
 
     def discord_log(self, record):
         webhook = Webhook.from_url(self.webhook_url, adapter=RequestsWebhookAdapter())
-        embed = Embed(title='Error', description='Hellow')
-        webhook.send(embed=embed, username='Foo')
+        color = self.get_color(record.levelname)
+        embed = Embed(title='Error',
+                      description=record.msg,
+                      color=color)
+        #embed.set_footer(record.name)
+        print(record.levelname)
+        print(record.msg)
+        print('Logger name: ' + record.name)
+        webhook.send(embed=embed, username='Carla Logger Webhook')
+
+    def get_color(self, levelname):
+        colors = {
+            'ERROR' : 0xFF0000,
+            'WARNING' : 0xFFFF00,
+            'INFO' : 0x00FF00,
+            'DEBUG' : 0x9933FF
+        }
+        return colors[levelname]
 
 
 class BotLogger:
@@ -51,7 +65,11 @@ class BotLogger:
                 raise AttributeError("No webhook url specified for webhook log.")
             else:
                 self.webhook_url = webhook_url
-                self.log_handlers.append(DiscordWebhookHandler(self.webhook_url))
+                discord_handler = DiscordWebhookHandler(self.webhook_url)
+                discord_handler.setLevel(logging.DEBUG)
+                self.log_handlers.append(discord_handler)
+                #self.log_handlers.append(DiscordWebhookHandler(self.webhook_url))
+
 
         # Check if log file logging is enabled
         if file_log:
@@ -59,7 +77,10 @@ class BotLogger:
                 raise AttributeError("No filepath specified for file log.")
             else:
                 self.file_path = file_path
-                self.log_handlers.append(self.get_file_handler())
+                file_handler = self.get_file_handler()
+                file_handler.setLevel(logging.DEBUG)
+                self.log_handlers.append(file_handler)
+                #self.log_handlers.append(self.get_file_handler().setLevel(logging.DEBUG))
 
         if self.log_handlers:
             self.set_queue_handler()
@@ -69,7 +90,8 @@ class BotLogger:
     def set_queue_handler(self):
         # Create queue
         queue_handler = QueueHandler(self.log_queue)
-        logger = logging.getLogger()
+        logger = logging.getLogger('root')
+        logger.setLevel(logging.DEBUG) # Enable all and let handlers deal with dialing in
         logger.addHandler(queue_handler)
         self.logger = logger
 
@@ -90,33 +112,8 @@ class BotLogger:
         )
         formatter = logging.Formatter(DEFAULT_FORMAT, "%d %b %H:%M:%S")
         _logger_handler.setFormatter(formatter)
-        _logger_handler.setLevel(logging.INFO)
         return _logger_handler
 
-#
-# async def setup():
-#     # Create queue
-#     log_queue = Queue(-1)
-#
-#     # Give queue handler the queue created
-#     queue_handler = QueueHandler(log_queue)
-#
-#     # Get all the other handlers you need
-#     stdout_handler = logging.StreamHandler()
-#     discord_handler = DiscordWebhookHandler(
-#                                             )
-#
-#     # Set up the queue listener to listen of the all registered handlers
-#     queue_listener = QueueListener(log_queue, discord_handler)
-#
-#     # Get the main logger and set up the queue handler to it
-#     logger = logging.getLogger()
-#     logger.addHandler(queue_handler)
-#
-#
-#     queue_listener.start()
-#     logger.debug("Is this working")
-#     return logger
 
 
 

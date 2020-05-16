@@ -3,8 +3,8 @@ import logging
 import traceback
 
 # Custom
-from .utils import discord_utils as utils
-from .utils.discord_arg_parser import arg_parser
+from utils import discord_utils as utils
+from utils.discord_arg_parser import arg_parser
 
 class Administrator(commands.Cog):
     def __init__(self, bot):

@@ -10,10 +10,13 @@ from discord.errors import Forbidden
 from discord.ext import commands
 
 # Private
-from Logging.set_logging import set_logging2
 from private.keys.settings import Settings
 from private.database.database import BotDatabase
 
+from utils.setup_logging import BotLogger
+
+import sys
+sys.path.append("..")
 # Global
 BOT_LOG = Path('private/logs/carla.log')
 DB_LOCATION = 'private/database/carla_db.sqlite'
@@ -92,13 +95,14 @@ class BotClient(commands.Bot):
         #logging.getLogger("chardet.charsetprober").disabled = True
         #self.log = await set_logging(self.log_channel)
         #self.log = await set_logging2(self.log_channel)
-        from Logging import setup_logging
-        from Logging.setup_logging import BotLogger
         #self.log = await setup_logging.setup()
         self.log = BotLogger(webhook_url=self.settings.webhook_url,
                              file_path="private/logs/carla.log").logger
 
         self.log.error("Testing queue pipe logging")
+        self.log.info("Testing yellow")
+        self.log.warning("No this one is yellow:")
+        self.log.debug("This should be purple?")
         #self.log = set_logging3(self.log_channel)
 
         # Change presence to version number
