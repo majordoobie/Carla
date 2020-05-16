@@ -44,6 +44,7 @@ class DiscordWebhookHandler(logging.Handler):
                 _return=True
             )
         )
+        embed.set_footer(text=f"Logger: {record.name}")
         #newfeature = asyncio.get_event_loop().run_until_complete()
         # embed = embed_print(
         #     title='Error',
